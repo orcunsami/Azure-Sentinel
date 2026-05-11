@@ -1,0 +1,31 @@
+{
+  "Name": "SOCRadar Entra ID Integration",
+  "Author": "SOCRadar - integration@socradar.io",
+  "Logo": "<img src=\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/socradar.svg\" width=\"75px\" height=\"75px\">",
+  "Description": "The [SOCRadar Entra ID Integration](https://socradar.io/) for Microsoft Sentinel automatically responds to leaked employee credentials detected by SOCRadar's Dark Web Monitoring. Pulls Botnet Data, PII Exposure, and VIP Protection alerts from the SOCRadar XTI Platform, looks up matching identities in Microsoft Entra ID, and takes configurable remediation actions (revoke sessions, force MFA re-registration, disable account, add to quarantine group, password reset, mark as compromised in Identity Protection). Authentication is secretless via Workload Identity Federation. Data ingestion uses the modern DCR-based Logs Ingestion API.",
+  "WorkbookBladeDescription": "This solution installs four workbooks to visualize leaked credentials detected by SOCRadar across Botnet, PII Exposure, and VIP Protection sources, plus a combined remediation dashboard.",
+  "PlaybooksBladeDescription": "This solution installs an Azure Function App playbook that pulls leaked credentials from SOCRadar on a timer schedule (default every 6 hours), looks each up in Entra ID, and takes configurable response actions via Microsoft Graph.",
+  "Version": "3.0.0",
+  "BasePath": "C:\\\\GitHub\\\\Azure-Sentinel\\\\Solutions\\\\SOCRadarEntraID",
+  "TemplateSpec": true,
+  "Is1Pconnector": false,
+  "Metadata": "SolutionMetadata.json",
+  "Workbooks": [
+    "Workbooks/SOCRadar-EntraID-Botnet.json",
+    "Workbooks/SOCRadar-EntraID-PII.json",
+    "Workbooks/SOCRadar-EntraID-VIP.json",
+    "Workbooks/SOCRadar-EntraID-Combined.json"
+  ],
+  "WorkbookDescription": [
+    "Visualizes leaked credentials detected in Botnet Data v2 and matched against Microsoft Entra ID.",
+    "Visualizes leaked credentials detected in PII Exposure v2 (data breaches) and matched against Microsoft Entra ID.",
+    "Visualizes VIP user exposures detected by SOCRadar VIP Protection v2.",
+    "Combined operational dashboard showing all sources, remediation actions taken, and audit summary."
+  ],
+  "Playbooks": [
+    "Playbooks/SOCRadar-EntraID-FunctionApp/azuredeploy.json"
+  ],
+  "PlaybookDescription": [
+    "Deploys an Azure Function App (Python 3.11, Linux Consumption) that polls SOCRadar Botnet, PII Exposure, and VIP Protection endpoints, looks up leaked identities in Microsoft Entra ID, and takes configurable remediation actions via Microsoft Graph. Authentication uses User-Assigned Managed Identity + Federated Identity Credential (secretless). Provisions Data Collection Rule + Data Collection Endpoint and four custom Log Analytics tables (SOCRadar_Botnet_CL, SOCRadar_PII_CL, SOCRadar_VIP_CL, SOCRadar_EntraID_Audit_CL) for DCR-based ingestion via the Logs Ingestion API."
+  ]
+}
