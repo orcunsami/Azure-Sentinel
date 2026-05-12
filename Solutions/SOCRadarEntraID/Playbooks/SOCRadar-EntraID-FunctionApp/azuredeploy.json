@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "title": "SOCRadar Entra ID \u2014 Function App",
+    "title": "SOCRadar Entra ID — Function App",
     "description": "Deploys an Azure Function App (Python 3.11, Linux Consumption) that polls SOCRadar's dark-web monitoring APIs, looks up leaked employees in Microsoft Entra ID via Microsoft Graph, takes configurable remediation actions, and writes audit data to Log Analytics via the Logs Ingestion API.",
     "version": "1.0.0",
     "author": "SOCRadar",
@@ -156,7 +156,7 @@
       "type": "bool",
       "defaultValue": false,
       "metadata": {
-        "description": "Delete all non-password authentication methods (Microsoft Authenticator, phone, FIDO2, software OATH, Windows Hello, email, TAP) to force MFA re-registration at next sign-in. Works on all Entra ID tiers. Requires EnableUserLookup=true and UserAuthenticationMethod.ReadWrite.All. HIGH IMPACT \u2014 off by default."
+        "description": "Delete all non-password authentication methods (Microsoft Authenticator, phone, FIDO2, software OATH, Windows Hello, email, TAP) to force MFA re-registration at next sign-in. Works on all Entra ID tiers. Requires EnableUserLookup=true and UserAuthenticationMethod.ReadWrite.All. HIGH IMPACT — off by default."
       }
     },
     "EnableROPC": {
@@ -621,6 +621,10 @@
               "type": "string"
             },
             {
+              "name": "entra_tenant_id",
+              "type": "string"
+            },
+            {
               "name": "entra_account_enabled",
               "type": "boolean"
             },
@@ -704,6 +708,10 @@
             },
             {
               "name": "entra_status",
+              "type": "string"
+            },
+            {
+              "name": "entra_tenant_id",
               "type": "string"
             },
             {
@@ -794,6 +802,10 @@
             },
             {
               "name": "entra_status",
+              "type": "string"
+            },
+            {
+              "name": "entra_tenant_id",
               "type": "string"
             },
             {
@@ -893,7 +905,7 @@
         "[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('WorkspaceName'), 'SOCRadar_EntraID_Audit_CL')]"
       ],
       "properties": {
-        "description": "SOCRadar Entra ID Integration \u2014 Logs Ingestion API",
+        "description": "SOCRadar Entra ID Integration — Logs Ingestion API",
         "streamDeclarations": {
           "Custom-SOCRadar_Botnet_CL": {
             "columns": [
@@ -955,6 +967,10 @@
               },
               {
                 "name": "entra_status",
+                "type": "string"
+              },
+              {
+                "name": "entra_tenant_id",
                 "type": "string"
               },
               {
@@ -1031,6 +1047,10 @@
               },
               {
                 "name": "entra_status",
+                "type": "string"
+              },
+              {
+                "name": "entra_tenant_id",
                 "type": "string"
               },
               {
@@ -1111,6 +1131,10 @@
               },
               {
                 "name": "entra_status",
+                "type": "string"
+              },
+              {
+                "name": "entra_tenant_id",
                 "type": "string"
               },
               {
@@ -1306,7 +1330,7 @@
       "type": "string",
       "value": "[concat('system:managed-identity:', variables('managedIdentityName'))]",
       "metadata": {
-        "description": "Note: actual FIC subject uses UAMI principalId; this is informational only \u2014 see readme for exact az CLI command"
+        "description": "Note: actual FIC subject uses UAMI principalId; this is informational only — see readme for exact az CLI command"
       }
     }
   }
