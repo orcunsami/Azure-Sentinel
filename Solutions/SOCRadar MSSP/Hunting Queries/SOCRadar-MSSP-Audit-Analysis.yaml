@@ -1,0 +1,22 @@
+id: 92297bc7-cca8-4848-8c31-581b90b35524
+name: SOCRadar MSSP - Audit Analysis
+description: '''Analyze SOCRadar MSSP audit logs to monitor import and sync operations per tenant.''
+
+  '
+requiredDataConnectors: []
+tactics:
+- Discovery
+query: 'SOCRadar_MSSP_AuditLog_CL
+
+  | summarize Count=count() by company_name, EventType
+
+  | order by company_name asc, Count desc
+
+  '
+version: 1.0.0
+severity: Low
+entityMappings:
+- entityType: CloudApplication
+  fieldMappings:
+  - identifier: Name
+    columnName: EventType

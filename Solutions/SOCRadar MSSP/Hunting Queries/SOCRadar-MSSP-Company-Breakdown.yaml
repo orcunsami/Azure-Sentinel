@@ -1,0 +1,17 @@
+id: 82090a8a-0d0a-4f1e-8153-025d528a1b67
+name: SOCRadar MSSP - Company Breakdown
+description: '''Per-company breakdown of SOCRadar MSSP alarms with severity distribution and alarm type analysis.''
+
+  '
+requiredDataConnectors: []
+tactics:
+- Discovery
+query: "SOCRadar_MSSP_Alarms_CL\n| summarize\n    TotalAlarms=count(),\n    Critical=countif(Severity == \"CRITICAL\"),\n    High=countif(Severity == \"HIGH\"),\n    Medium=countif(Severity == \"MEDIUM\"\
+  ),\n    Low=countif(Severity == \"LOW\"),\n    AlarmTypes=dcount(AlarmMainType),\n    LastAlarm=max(TimeGenerated)\n  by company_name\n| order by TotalAlarms desc\n"
+version: 1.0.0
+severity: Medium
+entityMappings:
+- entityType: Malware
+  fieldMappings:
+  - identifier: Name
+    columnName: AlarmMainType

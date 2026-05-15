@@ -1,0 +1,24 @@
+id: 059c38ec-29b7-4e07-8782-bbbff999b5e4
+name: SOCRadar MSSP - Alarm Trends
+description: '''Analyze SOCRadar MSSP alarm trends over the past 7 days across all tenants.''
+
+  '
+requiredDataConnectors: []
+tactics:
+- Discovery
+query: 'SOCRadar_MSSP_Alarms_CL
+
+  | where TimeGenerated > ago(7d)
+
+  | summarize Count=count() by bin(TimeGenerated, 1h), company_name
+
+  | order by TimeGenerated desc
+
+  '
+version: 1.0.0
+severity: Medium
+entityMappings:
+- entityType: Malware
+  fieldMappings:
+  - identifier: Name
+    columnName: AlarmMainType

@@ -10574,5 +10574,24 @@
     "templateRelativePath": "VaikoraAgentSignalsDashboard.json",
     "subtitle": "",
     "provider": "Data443 Risk Mitigation, Inc."
+  },
+  {
+    "workbookKey": "SOCRadarMSSPDashboard",
+    "logoFileName": "socradar.svg",
+    "description": "Gain insights into SOCRadar alarms imported into Microsoft Sentinel across multiple companies. View per-company alarm trends, severity distribution, top alarm types, and audit logs.",
+    "dataTypesDependencies": [
+      "SOCRadar_MSSP_Alarms_CL",
+      "SOCRadar_MSSP_AuditLog_CL"
+    ],
+    "dataConnectorsDependencies": [],
+    "previewImagesFileNames": [
+      "SOCRadarDashboardBlack.png",
+      "SOCRadarDashboardWhite.png"
+    ],
+    "version": "1.0.0",
+    "title": "SOCRadar MSSP Dashboard",
+    "templateRelativePath": "SOCRadar-MSSP-Dashboard.json",
+    "subtitle": "",
+    "provider": "SOCRadar"
   }
 ]

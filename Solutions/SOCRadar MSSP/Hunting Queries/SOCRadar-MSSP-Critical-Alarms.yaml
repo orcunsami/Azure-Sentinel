@@ -1,0 +1,24 @@
+id: 23dee0ae-4773-4b8b-8d32-acdadaad4b4e
+name: SOCRadar MSSP - Critical Alarms
+description: '''Hunt for high and critical severity SOCRadar MSSP alarms across all tenants.''
+
+  '
+requiredDataConnectors: []
+tactics:
+- Impact
+query: 'SOCRadar_MSSP_Alarms_CL
+
+  | where Severity in ("High", "Critical")
+
+  | project TimeGenerated, company_name, AlarmId, Title, AlarmMainType, AlarmSubType, Severity, Status
+
+  | order by TimeGenerated desc
+
+  '
+version: 1.0.0
+severity: High
+entityMappings:
+- entityType: Malware
+  fieldMappings:
+  - identifier: Name
+    columnName: AlarmMainType

@@ -1,0 +1,22 @@
+id: 61ff0cf0-66a6-4ca3-b581-81c1a8d63d7c
+name: SOCRadar MSSP - Alarm Overview
+description: '''Overview of SOCRadar MSSP alarms imported into Microsoft Sentinel, grouped by company, type and severity.''
+
+  '
+requiredDataConnectors: []
+tactics:
+- Discovery
+query: 'SOCRadar_MSSP_Alarms_CL
+
+  | summarize Count=count() by company_name, AlarmMainType, Severity
+
+  | order by company_name asc, Count desc
+
+  '
+version: 1.0.0
+severity: Medium
+entityMappings:
+- entityType: Malware
+  fieldMappings:
+  - identifier: Name
+    columnName: AlarmMainType
