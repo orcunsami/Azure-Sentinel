@@ -1,8 +1,6 @@
 <img src="logo/socradar.svg" alt="SOCRadar" width="75px" height="75px">
 
-# SOCRadar MSSP Intelligence for Microsoft Sentinel — **Content Hub Solution**
-
-> This is the **Content Hub Solution** package source (Microsoft Sentinel Marketplace path). For the **Standalone Deploy-to-Azure** source, see [`../Seperate-Repo/README.md`](../Seperate-Repo/README.md).
+# SOCRadar MSSP Intelligence for Microsoft Sentinel
 
 ## Overview
 
@@ -29,7 +27,7 @@ For single-customer deployments, use the standard `SOCRadar` solution instead.
 
 **Operational visibility**
 - Custom LAW tables `SOCRadar_MSSP_Alarms_CL` + `SOCRadar_MSSP_AuditLog_CL` with `company_name` column for KQL pivoting.
-- Per-cycle per-company audit row (`Severity_s = INFO` / `ERROR`).
+- Per-cycle per-company audit row (`Severity = INFO` / `ERROR`).
 - DCR-based Logs Ingestion API (HTTP Data Collector deprecation handled).
 
 ## Prerequisites
@@ -51,23 +49,11 @@ Install from the Microsoft Sentinel **Content Hub**:
 
 Both playbooks authenticate to Microsoft Sentinel via Azure Managed Identity. Logic Apps begin polling 3 minutes after deployment.
 
-## End-to-End Test Status (Content Hub path)
-
-Live E2E test on Azure (2026-05-15 NZST):
-
-- **Content Hub Import playbook greenfield deploy** (fresh workspace, CompanyIds=`132,200,300`, `EnableAlarmsTable=true`, `EnableAuditLogging=true`) → `Succeeded` in 34s
-- **Logic App run**: For_Each_Company iterated 3 companies, Ingest_To_Custom_Table **2/2 Succeeded** for Gamma (2 alarms)
-- **LAW `SOCRadar_MSSP_Alarms_CL`** + **LAW `SOCRadar_MSSP_AuditLog_CL`**: rows ingested with `company_name=Gamma`
-- **Microsoft Sentinel Incidents**: 2 incidents created in the CH workspace with `[MSSP-Gamma]` title prefix
-- **Idempotency**: re-trigger → 0 new incidents (composite dedup confirmed)
-
-Same source, two install paths. See [`../to-Radargoger/TESLIM-MSSP-Incidents.md`](../to-Radargoger/TESLIM-MSSP-Incidents.md) for the full evidence table.
-
 ## Playbooks
 
 | Playbook | Description |
 |----------|-------------|
-| [SOCRadar-MSSP-Alarm-Import](Playbooks/SOCRadar-MSSP-Alarm-Import) | Multi-company import. Provisions DCE + 2 custom tables + 2 DCRs + role assignments (Option A). |
+| [SOCRadar-MSSP-Alarm-Import](Playbooks/SOCRadar-MSSP-Alarm-Import) | Multi-company import. Provisions DCE + 2 custom tables + 2 DCRs + role assignments. |
 | [SOCRadar-MSSP-Alarm-Sync](Playbooks/SOCRadar-MSSP-Alarm-Sync) | Multi-company sync back to SOCRadar based on the `Company:<name>` tag. |
 
 ## About SOCRadar

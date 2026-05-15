@@ -735,10 +735,10 @@
                 "status": "Available",
                 "requiredDataConnectors": [
                   {
-                    "connectorId": "SOCRadarMSSPAlarms",
                     "dataTypes": [
                       "SOCRadar_MSSP_Alarms_CL"
-                    ]
+                    ],
+                    "connectorId": "SOCRadarMSSPAlarms"
                   }
                 ],
                 "tactics": [
@@ -751,13 +751,13 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AccountName"
+                        "columnName": "AccountName",
+                        "identifier": "Name"
                       }
-                    ]
+                    ],
+                    "entityType": "Malware"
                   }
                 ]
               }
@@ -841,10 +841,10 @@
                 "status": "Available",
                 "requiredDataConnectors": [
                   {
-                    "connectorId": "SOCRadarMSSPAlarms",
                     "dataTypes": [
                       "SOCRadar_MSSP_Alarms_CL"
-                    ]
+                    ],
+                    "connectorId": "SOCRadarMSSPAlarms"
                   }
                 ],
                 "tactics": [
@@ -857,26 +857,26 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AlarmMainType"
+                        "columnName": "AlarmMainType",
+                        "identifier": "Name"
                       },
                       {
-                        "identifier": "Category",
-                        "columnName": "AlarmSubType"
+                        "columnName": "AlarmSubType",
+                        "identifier": "Category"
                       }
-                    ]
+                    ],
+                    "entityType": "Malware"
                   },
                   {
-                    "entityType": "URL",
                     "fieldMappings": [
                       {
-                        "identifier": "Url",
-                        "columnName": "AlarmUrl"
+                        "columnName": "AlarmUrl",
+                        "identifier": "Url"
                       }
-                    ]
+                    ],
+                    "entityType": "URL"
                   }
                 ]
               }
@@ -960,10 +960,10 @@
                 "status": "Available",
                 "requiredDataConnectors": [
                   {
-                    "connectorId": "MicrosoftSentinel",
                     "dataTypes": [
                       "SecurityIncident"
-                    ]
+                    ],
+                    "connectorId": "MicrosoftSentinel"
                   }
                 ],
                 "tactics": [
@@ -974,13 +974,13 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Account",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AccountName"
+                        "columnName": "AccountName",
+                        "identifier": "Name"
                       }
-                    ]
+                    ],
+                    "entityType": "Account"
                   }
                 ]
               }
