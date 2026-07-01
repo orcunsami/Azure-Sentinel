@@ -2929,6 +2929,12 @@
                 "description": "SOCRadar IOC Enrichment API Key (Standard Licensed APIs entitlement required)"
               }
             },
+            "CompanyId": {
+              "type": "string",
+              "metadata": {
+                "description": "SOCRadar Company ID"
+              }
+            },
             "WorkspaceName": {
               "type": "string",
               "metadata": {
@@ -3013,6 +3019,9 @@
                     "SOCRadarAPIKey": {
                       "type": "SecureString"
                     },
+                    "CompanyId": {
+                      "type": "String"
+                    },
                     "RiskScoreThreshold": {
                       "type": "Int"
                     }
@@ -3034,9 +3043,104 @@
                     }
                   },
                   "actions": {
+                    "Extract_Alarm_Id": {
+                      "type": "Compose",
+                      "inputs": "@if(contains(coalesce(triggerBody()?['object']?['properties']?['title'], ''), '#'), first(split(last(split(coalesce(triggerBody()?['object']?['properties']?['title'], ''), '#')), ' ')), '')",
+                      "runAfter": {}
+                    },
+                    "Get_SOCRadar_Alarm_Entities": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "not": {
+                              "equals": [
+                                "@outputs('Extract_Alarm_Id')",
+                                ""
+                              ]
+                            }
+                          },
+                          {
+                            "not": {
+                              "equals": [
+                                "@parameters('CompanyId')",
+                                ""
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Fetch_Alarm": {
+                          "type": "Http",
+                          "inputs": {
+                            "method": "GET",
+                            "uri": "https://platform.socradar.com/api/company/@{parameters('CompanyId')}/incidents/v4",
+                            "queries": {
+                              "alarm_ids": "@{outputs('Extract_Alarm_Id')}"
+                            },
+                            "headers": {
+                              "API-Key": "@{parameters('SOCRadarAPIKey')}"
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 2,
+                              "interval": "PT10S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runtimeConfiguration": {
+                            "secureData": {
+                              "properties": [
+                                "inputs"
+                              ]
+                            }
+                          },
+                          "runAfter": {}
+                        },
+                        "Map_Alarm_Entities": {
+                          "type": "Select",
+                          "inputs": {
+                            "from": "@coalesce(first(body('Fetch_Alarm')?['data'])?['alarm_related_entities'], json('[]'))",
+                            "select": {
+                              "properties": {
+                                "address": "@if(equals(toLower(coalesce(item()?['key'], '')), 'ip'), item()?['value'], null)",
+                                "domainName": "@if(or(equals(toLower(coalesce(item()?['key'], '')), 'domain'), equals(toLower(coalesce(item()?['key'], '')), 'hostname')), item()?['value'], null)",
+                                "url": "@if(equals(toLower(coalesce(item()?['key'], '')), 'url'), item()?['value'], null)",
+                                "hashValue": "@if(equals(toLower(coalesce(item()?['key'], '')), 'hash'), item()?['value'], null)"
+                              }
+                            }
+                          },
+                          "runAfter": {
+                            "Fetch_Alarm": [
+                              "Succeeded",
+                              "Failed",
+                              "TimedOut"
+                            ]
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {}
+                      },
+                      "runAfter": {
+                        "Extract_Alarm_Id": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Build_Entity_List": {
+                      "type": "Compose",
+                      "inputs": "@union(coalesce(triggerBody()?['object']?['properties']?['relatedEntities'], json('[]')), coalesce(body('Map_Alarm_Entities'), json('[]')))",
+                      "runAfter": {
+                        "Get_SOCRadar_Alarm_Entities": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
                     "For_Each_Entity": {
                       "type": "Foreach",
-                      "foreach": "@coalesce(triggerBody()?['object']?['properties']?['relatedEntities'], json('[]'))",
+                      "foreach": "@outputs('Build_Entity_List')",
                       "runtimeConfiguration": {
                         "concurrency": {
                           "repetitions": 1
@@ -3045,7 +3149,8 @@
                       "actions": {
                         "Get_Indicator_Value": {
                           "type": "Compose",
-                          "inputs": "@coalesce(items('For_Each_Entity')?['properties']?['address'], items('For_Each_Entity')?['properties']?['domainName'], items('For_Each_Entity')?['properties']?['url'], items('For_Each_Entity')?['properties']?['hashValue'], '')"
+                          "inputs": "@coalesce(items('For_Each_Entity')?['properties']?['address'], items('For_Each_Entity')?['properties']?['domainName'], items('For_Each_Entity')?['properties']?['url'], items('For_Each_Entity')?['properties']?['hashValue'], '')",
+                          "runAfter": {}
                         },
                         "If_Indicator_Present": {
                           "type": "If",
@@ -3090,7 +3195,8 @@
                                     "inputs"
                                   ]
                                 }
-                              }
+                              },
+                              "runAfter": {}
                             },
                             "Handle_Response": {
                               "type": "Switch",
@@ -3111,14 +3217,16 @@
                                       "inputs": {
                                         "from": "@coalesce(body('Enrich_IOC')?['top_classifications']?['threat_actors'], json('[]'))",
                                         "select": "@item()?['name']"
-                                      }
+                                      },
+                                      "runAfter": {}
                                     },
                                     "Select_Malware_Names": {
                                       "type": "Select",
                                       "inputs": {
                                         "from": "@coalesce(body('Enrich_IOC')?['top_classifications']?['malwares'], json('[]'))",
                                         "select": "@item()?['name']"
-                                      }
+                                      },
+                                      "runAfter": {}
                                     },
                                     "If_Has_Signal": {
                                       "type": "If",
@@ -3165,8 +3273,12 @@
                                               "incidentArmId": "@triggerBody()?['object']?['id']",
                                               "message": "<h3>SOCRadar IOC Enrichment</h3><b>Indicator:</b> @{replace(replace(replace(coalesce(body('Enrich_IOC')?['details']?['name'], outputs('Get_Indicator_Value')), '&', '&amp;'), '<', '&lt;'), '>', '&gt;')} (@{coalesce(body('Enrich_IOC')?['details']?['object_type'], 'unknown')})<br><b>Risk Score:</b> @{coalesce(first(body('Enrich_IOC')?['details']?['score']), 0)} / 100<br><b>Signal Strength:</b> @{if(empty(string(body('Enrich_IOC')?['details']?['ioc_signal_strength'])), 'N/A', string(body('Enrich_IOC')?['details']?['ioc_signal_strength']))}<br><b>Whitelisted:</b> @{coalesce(body('Enrich_IOC')?['details']?['is_whitelisted'], false)}<br><b>Categories:</b> malware=@{coalesce(body('Enrich_IOC')?['categorization']?['malware'], false)}, threat_actor=@{coalesce(body('Enrich_IOC')?['categorization']?['threat_actor'], false)}, tor=@{coalesce(body('Enrich_IOC')?['categorization']?['tor'], false)}, vpn=@{coalesce(body('Enrich_IOC')?['categorization']?['vpn'], false)}, proxy=@{coalesce(body('Enrich_IOC')?['categorization']?['proxy'], false)}, scanner=@{coalesce(body('Enrich_IOC')?['categorization']?['scanner'], false)}<br><b>Threat Actors:</b> @{if(empty(body('Select_ThreatActor_Names')), 'None', join(body('Select_ThreatActor_Names'), ', '))}<br><b>Malware:</b> @{if(empty(body('Select_Malware_Names')), 'None', join(body('Select_Malware_Names'), ', '))}<br><b>Campaign:</b> @{if(empty(string(body('Enrich_IOC')?['top_classifications']?['campaign'])), 'N/A', string(body('Enrich_IOC')?['top_classifications']?['campaign']))}<br><b>Geo / ASN:</b> @{coalesce(body('Enrich_IOC')?['details']?['extra_info']?['city_name'], 'N/A')}, @{coalesce(body('Enrich_IOC')?['details']?['extra_info']?['region_name'], 'N/A')} (@{coalesce(body('Enrich_IOC')?['details']?['extra_info']?['asn_name'], 'N/A')})<br><b>Feed Sources:</b> @{length(coalesce(body('Enrich_IOC')?['details']?['feed_source_list'], json('[]')))}<br><b>VirusTotal:</b> @{coalesce(body('Enrich_IOC')?['details']?['vt_link'], 'N/A')}<br><i>Powered by SOCRadar IOC Enrichment</i>"
                                             }
-                                          }
+                                          },
+                                          "runAfter": {}
                                         }
+                                      },
+                                      "else": {
+                                        "actions": {}
                                       },
                                       "runAfter": {
                                         "Select_ThreatActor_Names": [
@@ -3196,12 +3308,19 @@
                                           "incidentArmId": "@triggerBody()?['object']?['id']",
                                           "message": "<h3>SOCRadar IOC Enrichment</h3><b>Indicator:</b> @{replace(replace(replace(outputs('Get_Indicator_Value'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;')}<br>This indicator is being enriched by SOCRadar (first lookup). Re-run this playbook in a few minutes to get the full enrichment.<br><i>Powered by SOCRadar IOC Enrichment</i>"
                                         }
-                                      }
+                                      },
+                                      "runAfter": {}
                                     }
                                   }
                                 }
+                              },
+                              "default": {
+                                "actions": {}
                               }
                             }
+                          },
+                          "else": {
+                            "actions": {}
                           },
                           "runAfter": {
                             "Get_Indicator_Value": [
@@ -3209,6 +3328,11 @@
                             ]
                           }
                         }
+                      },
+                      "runAfter": {
+                        "Build_Entity_List": [
+                          "Succeeded"
+                        ]
                       }
                     }
                   }
@@ -3230,6 +3354,9 @@
                   },
                   "SOCRadarAPIKey": {
                     "value": "[[parameters('SOCRadarAPIKey')]"
+                  },
+                  "CompanyId": {
+                    "value": "[[parameters('CompanyId')]"
                   },
                   "RiskScoreThreshold": {
                     "value": "[[parameters('RiskScoreThreshold')]"
