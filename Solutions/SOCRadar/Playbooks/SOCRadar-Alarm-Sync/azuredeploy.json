@@ -1,12 +1,17 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.0.0.0",
     "metadata": {
         "title": "SOCRadar-Alarm-Sync",
         "description": "Syncs closed incidents from Microsoft Sentinel back to SOCRadar platform. Uses Synced tag to prevent duplicate syncs. Filters by: SOCRadar tag + Closed status + lastModified. Now with pagination for 1000+ incidents.",
         "version": "1.0.0",
-        "author": "SOCRadar",
-        "lastUpdateTime": "2026-02-20T00:00:00.000Z"
+        "author": {
+            "name": "SOCRadar"
+        },
+        "lastUpdateTime": "2026-02-20T00:00:00.000Z",
+        "support": {
+            "tier": "Partner"
+        }
     },
     "parameters": {
         "PlaybookName": {
@@ -74,6 +79,13 @@
             "metadata": {
                 "description": "Microsoft Sentinel role for Logic App. Responder sufficient for incident ops (least-privilege)."
             }
+        },
+        "SyncSeverity": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Push the Microsoft Sentinel incident severity back to SOCRadar when an incident is closed. Off by default: Microsoft Sentinel has no Critical severity, so a CRITICAL alarm imports as High and writing that back would silently downgrade the alarm on SOCRadar."
+            }
         }
     },
     "variables": {
@@ -133,6 +145,10 @@
                         },
                         "PollingIntervalMinutes": {
                             "type": "Int"
+                        },
+                        "SyncSeverity": {
+                            "type": "Bool",
+                            "defaultValue": false
                         }
                     },
                     "triggers": {
@@ -190,7 +206,7 @@
                             "expression": "@equals(variables('closed_next_link'), '')",
                             "limit": {
                                 "count": 100,
-                                "timeout": "PT1H"
+                                "timeout": "PT10M"
                             },
                             "actions": {
                                 "Query_Closed_Page": {
@@ -205,7 +221,7 @@
                                             "type": "exponential",
                                             "count": 4,
                                             "interval": "PT10S",
-                                            "maximumInterval": "PT1H"
+                                            "maximumInterval": "PT1M"
                                         }
                                     },
                                     "runAfter": {}
@@ -261,7 +277,7 @@
                             "actions": {
                                 "Extract_Alarm_ID": {
                                     "type": "Compose",
-                                    "inputs": "@split(split(items('For_Each_Incident')?['properties']?['title'], '#')[1], ' ')[0]",
+                                    "inputs": "@if(contains(coalesce(items('For_Each_Incident')?['properties']?['title'], ''), '#'), split(split(items('For_Each_Incident')?['properties']?['title'], '#')[1], ' ')[0], '')",
                                     "runAfter": {}
                                 },
                                 "Check_Has_Synced_Tag": {
@@ -288,6 +304,14 @@
                                                     "@outputs('Check_Has_Synced_Tag')",
                                                     false
                                                 ]
+                                            },
+                                            {
+                                                "not": {
+                                                    "equals": [
+                                                        "@outputs('Extract_Alarm_ID')",
+                                                        ""
+                                                    ]
+                                                }
                                             }
                                         ]
                                     },
@@ -310,7 +334,7 @@
                                                     "type": "exponential",
                                                     "count": 4,
                                                     "interval": "PT10S",
-                                                    "maximumInterval": "PT1H"
+                                                    "maximumInterval": "PT1M"
                                                 }
                                             },
                                             "runtimeConfiguration": {
@@ -322,88 +346,126 @@
                                             },
                                             "runAfter": {}
                                         },
-                                        "Map_Severity": {
-                                            "type": "Compose",
-                                            "inputs": "@coalesce(items('For_Each_Incident')?['properties']?['severity'], 'Medium')",
+                                        "Check_SOCRadar_Write_Succeeded": {
+                                            "type": "If",
+                                            "expression": {
+                                                "or": [
+                                                    {
+                                                        "equals": [
+                                                            "@coalesce(body('Update_SOCRadar_Status')?['is_success'], false)",
+                                                            true
+                                                        ]
+                                                    },
+                                                    {
+                                                        "contains": [
+                                                            "@toLower(string(coalesce(body('Update_SOCRadar_Status')?['message'], '')))",
+                                                            "already"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "actions": {
+                                                "Add_Synced_Tag": {
+                                                    "type": "Http",
+                                                    "inputs": {
+                                                        "method": "PUT",
+                                                        "uri": "[concat(variables('_managementBaseUrl'), 'subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('WorkspaceResourceGroup'), '/providers/Microsoft.OperationalInsights/workspaces/', parameters('WorkspaceName'), '/providers/Microsoft.SecurityInsights/incidents/@{items(''For_Each_Incident'')?[''name'']}?api-version=2023-11-01')]",
+                                                        "authentication": {
+                                                            "type": "ManagedServiceIdentity"
+                                                        },
+                                                        "headers": {
+                                                            "Content-Type": "application/json"
+                                                        },
+                                                        "body": {
+                                                            "etag": "@{items('For_Each_Incident')?['etag']}",
+                                                            "properties": {
+                                                                "title": "@{items('For_Each_Incident')?['properties']?['title']}",
+                                                                "description": "@{items('For_Each_Incident')?['properties']?['description']}",
+                                                                "status": "@{items('For_Each_Incident')?['properties']?['status']}",
+                                                                "severity": "@{items('For_Each_Incident')?['properties']?['severity']}",
+                                                                "classification": "@{items('For_Each_Incident')?['properties']?['classification']}",
+                                                                "classificationReason": "@{items('For_Each_Incident')?['properties']?['classificationReason']}",
+                                                                "classificationComment": "@{items('For_Each_Incident')?['properties']?['classificationComment']}",
+                                                                "owner": "@items('For_Each_Incident')?['properties']?['owner']",
+                                                                "firstActivityTimeUtc": "@{items('For_Each_Incident')?['properties']?['firstActivityTimeUtc']}",
+                                                                "lastActivityTimeUtc": "@{items('For_Each_Incident')?['properties']?['lastActivityTimeUtc']}",
+                                                                "labels": "@union(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]')), json('[{\"labelName\": \"Synced\", \"labelType\": \"User\"}]'))"
+                                                            }
+                                                        },
+                                                        "retryPolicy": {
+                                                            "type": "exponential",
+                                                            "count": 4,
+                                                            "interval": "PT10S",
+                                                            "maximumInterval": "PT1M"
+                                                        }
+                                                    },
+                                                    "runAfter": {}
+                                                }
+                                            },
                                             "runAfter": {
                                                 "Update_SOCRadar_Status": [
                                                     "Succeeded"
                                                 ]
                                             }
                                         },
-                                        "Update_SOCRadar_Severity": {
-                                            "type": "Http",
-                                            "inputs": {
-                                                "method": "POST",
-                                                "uri": "https://platform.socradar.com/api/company/@{parameters('CompanyId')}/alarm/severity",
-                                                "headers": {
-                                                    "API-Key": "@{parameters('SOCRadarAPIKey')}",
-                                                    "Content-Type": "application/json"
-                                                },
-                                                "body": {
-                                                    "alarm_ids": "@createArray(int(outputs('Extract_Alarm_ID')))",
-                                                    "severity": "@{outputs('Map_Severity')}"
-                                                },
-                                                "retryPolicy": {
-                                                    "type": "exponential",
-                                                    "count": 4,
-                                                    "interval": "PT10S",
-                                                    "maximumInterval": "PT1H"
-                                                }
-                                            },
-                                            "runtimeConfiguration": {
-                                                "secureData": {
-                                                    "properties": [
-                                                        "inputs"
-                                                    ]
-                                                }
-                                            },
-                                            "runAfter": {
-                                                "Map_Severity": [
-                                                    "Succeeded"
-                                                ]
-                                            }
-                                        },
-                                        "Add_Synced_Tag": {
-                                            "type": "Http",
-                                            "inputs": {
-                                                "method": "PUT",
-                                                "uri": "[concat(variables('_managementBaseUrl'), 'subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('WorkspaceResourceGroup'), '/providers/Microsoft.OperationalInsights/workspaces/', parameters('WorkspaceName'), '/providers/Microsoft.SecurityInsights/incidents/@{items(''For_Each_Incident'')?[''name'']}?api-version=2023-11-01')]",
-                                                "authentication": {
-                                                    "type": "ManagedServiceIdentity"
-                                                },
-                                                "headers": {
-                                                    "Content-Type": "application/json"
-                                                },
-                                                "body": {
-                                                    "etag": "@{items('For_Each_Incident')?['etag']}",
-                                                    "properties": {
-                                                        "title": "@{items('For_Each_Incident')?['properties']?['title']}",
-                                                        "description": "@{items('For_Each_Incident')?['properties']?['description']}",
-                                                        "status": "@{items('For_Each_Incident')?['properties']?['status']}",
-                                                        "severity": "@{items('For_Each_Incident')?['properties']?['severity']}",
-                                                        "classification": "@{items('For_Each_Incident')?['properties']?['classification']}",
-                                                        "classificationReason": "@{items('For_Each_Incident')?['properties']?['classificationReason']}",
-                                                        "classificationComment": "@{items('For_Each_Incident')?['properties']?['classificationComment']}",
-                                                        "owner": "@items('For_Each_Incident')?['properties']?['owner']",
-                                                        "firstActivityTimeUtc": "@{items('For_Each_Incident')?['properties']?['firstActivityTimeUtc']}",
-                                                        "lastActivityTimeUtc": "@{items('For_Each_Incident')?['properties']?['lastActivityTimeUtc']}",
-                                                        "labels": "@union(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]')), json('[{\"labelName\": \"Synced\", \"labelType\": \"User\"}]'))"
+                                        "Check_Severity_Sync_Enabled": {
+                                            "type": "If",
+                                            "expression": {
+                                                "and": [
+                                                    {
+                                                        "equals": [
+                                                            "@parameters('SyncSeverity')",
+                                                            true
+                                                        ]
                                                     }
+                                                ]
+                                            },
+                                            "actions": {
+                                                "Map_Severity": {
+                                                    "type": "Compose",
+                                                    "inputs": "@if(equals(items('For_Each_Incident')?['properties']?['severity'], 'High'), 'HIGH', if(equals(items('For_Each_Incident')?['properties']?['severity'], 'Medium'), 'MEDIUM', 'LOW'))",
+                                                    "runAfter": {}
                                                 },
-                                                "retryPolicy": {
-                                                    "type": "exponential",
-                                                    "count": 4,
-                                                    "interval": "PT10S",
-                                                    "maximumInterval": "PT1H"
+                                                "Update_SOCRadar_Severity": {
+                                                    "type": "Http",
+                                                    "inputs": {
+                                                        "method": "POST",
+                                                        "uri": "https://platform.socradar.com/api/company/@{parameters('CompanyId')}/alarm/severity",
+                                                        "headers": {
+                                                            "API-Key": "@{parameters('SOCRadarAPIKey')}",
+                                                            "Content-Type": "application/json"
+                                                        },
+                                                        "body": {
+                                                            "alarm_ids": "@createArray(int(outputs('Extract_Alarm_ID')))",
+                                                            "severity": "@{outputs('Map_Severity')}"
+                                                        },
+                                                        "retryPolicy": {
+                                                            "type": "exponential",
+                                                            "count": 4,
+                                                            "interval": "PT10S",
+                                                            "maximumInterval": "PT1M"
+                                                        }
+                                                    },
+                                                    "runtimeConfiguration": {
+                                                        "secureData": {
+                                                            "properties": [
+                                                                "inputs"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "runAfter": {
+                                                        "Map_Severity": [
+                                                            "Succeeded"
+                                                        ]
+                                                    }
                                                 }
                                             },
+                                            "else": {
+                                                "actions": {}
+                                            },
                                             "runAfter": {
-                                                "Update_SOCRadar_Severity": [
-                                                    "Succeeded",
-                                                    "Failed",
-                                                    "Skipped",
-                                                    "TimedOut"
+                                                "Update_SOCRadar_Status": [
+                                                    "Succeeded"
                                                 ]
                                             }
                                         }
@@ -452,6 +514,9 @@
                     },
                     "PollingIntervalMinutes": {
                         "value": "[parameters('PollingIntervalMinutes')]"
+                    },
+                    "SyncSeverity": {
+                        "value": "[parameters('SyncSeverity')]"
                     }
                 }
             }
