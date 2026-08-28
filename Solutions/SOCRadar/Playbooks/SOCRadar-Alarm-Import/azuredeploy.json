@@ -155,6 +155,8 @@
         "workspaceResourceId": "[resourceId(parameters('WorkspaceResourceGroup'), 'Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
         "AuditStreamName": "Custom-SOCRadarAuditLog_CL",
         "_managementBaseUrl": "[environment().resourceManager]",
+        "_logAnalyticsBaseUrl": "[concat('https://api.loganalytics', '.io/')]",
+        "_logAnalyticsAudience": "[concat('https://api.loganalytics', '.io')]",
         "DceName": "SOCRadar-DCE",
         "AlarmsTableName": "SOCRadar_Alarms_CL",
         "AlarmsDcrName": "SOCRadar-Alarms-DCR",
@@ -1287,13 +1289,13 @@
                                                                     },
                                                                     "inputs": {
                                                                         "method": "POST",
-                                                                        "uri": "https://api.loganalytics.io/v1/workspaces/@{parameters('WorkspaceId')}/query",
+                                                                        "uri": "[concat(variables('_logAnalyticsBaseUrl'), 'v1/workspaces/@{parameters(''WorkspaceId'')}/query')]",
                                                                         "headers": {
                                                                             "Content-Type": "application/json"
                                                                         },
                                                                         "authentication": {
                                                                             "type": "ManagedServiceIdentity",
-                                                                            "audience": "https://api.loganalytics.io"
+                                                                            "audience": "[variables('_logAnalyticsAudience')]"
                                                                         },
                                                                         "body": {
                                                                             "query": "print raw = base64_decode_tostring('@{base64(outputs('Compose_IoC_Source'))}') | extend Urls0 = extract_all(@'(https?://[^\\s\"<>\\]\\)},;\\\\]+)', raw) | extend nourl = replace_regex(raw, @'https?://[^\\s\"<>\\]\\)},;]+', ' ') | extend Ips0 = extract_all(@'\\b((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3})\\b', nourl) | extend Doms0 = extract_all(@'\\b((?:[a-z0-9][a-z0-9-]{0,62}\\.)+(?:[a-z]{2}|com|net|org|info|biz|edu|gov|mil|int|app|dev|cloud|online|site|shop|club|live|link|xyz|top|icu|buzz|tech|store|space|website|host|press|digital|agency|solutions|services|systems|network|email|group|world|life|today|news|media|works|zone|center|company|expert|tools|support|care|best|run|click|download|stream|review|date|loan|men|win|bid|trade|party|science|work|wiki|fun|rest|quest|monster|cyou|sbs|lol|help|pro|name|mobi|asia|tel|travel|jobs|museum|aero|coop|cat|post|blog|page|ninja|guru|team|design|studio|software|finance|capital|fund|bank|insure|legal|clinic|health|dental|vision|coach|academy|school|college|university|institute))\\b', tolower(nourl)) | mv-expand D = iff(array_length(Doms0) == 0, dynamic(['']), Doms0) to typeof(string) | where isempty(D) or (D != 'socradar.com' and D !endswith '.socradar.com' and not(D matches regex @'\\.(png|jpe?g|gif|svg|ico|css|js|txt|json|xml|csv|pdf|docx?|xlsx?|pptx?|exe|dll)$')) | summarize Ips0 = take_any(Ips0), Urls0 = take_any(Urls0), Doms = make_set_if(D, isnotempty(D)) | mv-expand U = iff(array_length(Urls0) == 0, dynamic(['']), Urls0) to typeof(string) | extend U = trim_end(@'[.,;:!?\\\\]+', U) | summarize Ips0 = take_any(Ips0), Doms = take_any(Doms), Urls = make_set_if(U, isnotempty(U)) | project Ips = array_sort_asc(set_union(Ips0, dynamic([]))), Domains = array_sort_asc(set_union(Doms, dynamic([]))), Urls = array_sort_asc(set_union(Urls, dynamic([])))"
@@ -1416,13 +1418,13 @@
                                                                             "runAfter": {},
                                                                             "inputs": {
                                                                                 "method": "PUT",
-                                                                                "uri": "https://management.azure.com/subscriptions/@{parameters('SubscriptionId')}/resourceGroups/@{parameters('ResourceGroupName')}/providers/Microsoft.OperationalInsights/workspaces/@{parameters('WorkspaceName')}/providers/Microsoft.SecurityInsights/bookmarks/50c8ada7-0000-4000-8000-@{substring(concat('000000000000', string(items('For_Each_Alarm')?['alarm_id'])), length(string(items('For_Each_Alarm')?['alarm_id'])), 12)}?api-version=2024-10-01-preview",
+                                                                                "uri": "[concat(variables('_managementBaseUrl'), 'subscriptions/@{parameters(''SubscriptionId'')}/resourceGroups/@{parameters(''ResourceGroupName'')}/providers/Microsoft.OperationalInsights/workspaces/@{parameters(''WorkspaceName'')}/providers/Microsoft.SecurityInsights/bookmarks/50c8ada7-0000-4000-8000-@{substring(concat(''000000000000'', string(items(''For_Each_Alarm'')?[''alarm_id''])), length(string(items(''For_Each_Alarm'')?[''alarm_id''])), 12)}?api-version=2024-10-01-preview')]",
                                                                                 "headers": {
                                                                                     "Content-Type": "application/json"
                                                                                 },
                                                                                 "authentication": {
                                                                                     "type": "ManagedServiceIdentity",
-                                                                                    "audience": "https://management.azure.com"
+                                                                                    "audience": "[variables('_managementBaseUrl')]"
                                                                                 },
                                                                                 "body": {
                                                                                     "properties": {
@@ -1453,13 +1455,13 @@
                                                                             },
                                                                             "inputs": {
                                                                                 "method": "PUT",
-                                                                                "uri": "https://management.azure.com@{outputs('Resolve_Entity_Target')['incidentId']}/relations/50c8ada7-0000-4000-9000-@{substring(concat('000000000000', string(items('For_Each_Alarm')?['alarm_id'])), length(string(items('For_Each_Alarm')?['alarm_id'])), 12)}?api-version=2023-11-01",
+                                                                                "uri": "[concat(variables('_managementBaseUrl'), '@{substring(outputs(''Resolve_Entity_Target'')[''incidentId''], 1, sub(length(outputs(''Resolve_Entity_Target'')[''incidentId'']), 1))}/relations/50c8ada7-0000-4000-9000-@{substring(concat(''000000000000'', string(items(''For_Each_Alarm'')?[''alarm_id''])), length(string(items(''For_Each_Alarm'')?[''alarm_id''])), 12)}?api-version=2023-11-01')]",
                                                                                 "headers": {
                                                                                     "Content-Type": "application/json"
                                                                                 },
                                                                                 "authentication": {
                                                                                     "type": "ManagedServiceIdentity",
-                                                                                    "audience": "https://management.azure.com"
+                                                                                    "audience": "[variables('_managementBaseUrl')]"
                                                                                 },
                                                                                 "body": {
                                                                                     "properties": {
@@ -1497,13 +1499,13 @@
                                                                             },
                                                                             "inputs": {
                                                                                 "method": "PUT",
-                                                                                "uri": "https://management.azure.com@{outputs('Resolve_Entity_Target')['incidentId']}/relations/50c8ada7-0000-4000-9000-@{substring(concat('000000000000', string(items('For_Each_Alarm')?['alarm_id'])), length(string(items('For_Each_Alarm')?['alarm_id'])), 12)}?api-version=2023-11-01",
+                                                                                "uri": "[concat(variables('_managementBaseUrl'), '@{substring(outputs(''Resolve_Entity_Target'')[''incidentId''], 1, sub(length(outputs(''Resolve_Entity_Target'')[''incidentId'']), 1))}/relations/50c8ada7-0000-4000-9000-@{substring(concat(''000000000000'', string(items(''For_Each_Alarm'')?[''alarm_id''])), length(string(items(''For_Each_Alarm'')?[''alarm_id''])), 12)}?api-version=2023-11-01')]",
                                                                                 "headers": {
                                                                                     "Content-Type": "application/json"
                                                                                 },
                                                                                 "authentication": {
                                                                                     "type": "ManagedServiceIdentity",
-                                                                                    "audience": "https://management.azure.com"
+                                                                                    "audience": "[variables('_managementBaseUrl')]"
                                                                                 },
                                                                                 "body": {
                                                                                     "properties": {
@@ -1734,13 +1736,13 @@
                                             },
                                             "inputs": {
                                                 "method": "POST",
-                                                "uri": "https://api.loganalytics.io/v1/workspaces/@{parameters('WorkspaceId')}/query",
+                                                "uri": "[concat(variables('_logAnalyticsBaseUrl'), 'v1/workspaces/@{parameters(''WorkspaceId'')}/query')]",
                                                 "headers": {
                                                     "Content-Type": "application/json"
                                                 },
                                                 "authentication": {
                                                     "type": "ManagedServiceIdentity",
-                                                    "audience": "https://api.loganalytics.io"
+                                                    "audience": "[variables('_logAnalyticsAudience')]"
                                                 },
                                                 "body": {
                                                     "query": "print raw = base64_decode_tostring('@{base64(outputs('BF_Compose_IoC_Source'))}') | extend Urls0 = extract_all(@'(https?://[^\\s\"<>\\]\\)},;\\\\]+)', raw) | extend nourl = replace_regex(raw, @'https?://[^\\s\"<>\\]\\)},;]+', ' ') | extend Ips0 = extract_all(@'\\b((?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3})\\b', nourl) | extend Doms0 = extract_all(@'\\b((?:[a-z0-9][a-z0-9-]{0,62}\\.)+(?:[a-z]{2}|com|net|org|info|biz|edu|gov|mil|int|app|dev|cloud|online|site|shop|club|live|link|xyz|top|icu|buzz|tech|store|space|website|host|press|digital|agency|solutions|services|systems|network|email|group|world|life|today|news|media|works|zone|center|company|expert|tools|support|care|best|run|click|download|stream|review|date|loan|men|win|bid|trade|party|science|work|wiki|fun|rest|quest|monster|cyou|sbs|lol|help|pro|name|mobi|asia|tel|travel|jobs|museum|aero|coop|cat|post|blog|page|ninja|guru|team|design|studio|software|finance|capital|fund|bank|insure|legal|clinic|health|dental|vision|coach|academy|school|college|university|institute))\\b', tolower(nourl)) | mv-expand D = iff(array_length(Doms0) == 0, dynamic(['']), Doms0) to typeof(string) | where isempty(D) or (D != 'socradar.com' and D !endswith '.socradar.com' and not(D matches regex @'\\.(png|jpe?g|gif|svg|ico|css|js|txt|json|xml|csv|pdf|docx?|xlsx?|pptx?|exe|dll)$')) | summarize Ips0 = take_any(Ips0), Urls0 = take_any(Urls0), Doms = make_set_if(D, isnotempty(D)) | mv-expand U = iff(array_length(Urls0) == 0, dynamic(['']), Urls0) to typeof(string) | extend U = trim_end(@'[.,;:!?\\\\]+', U) | summarize Ips0 = take_any(Ips0), Doms = take_any(Doms), Urls = make_set_if(U, isnotempty(U)) | project Ips = array_sort_asc(set_union(Ips0, dynamic([]))), Domains = array_sort_asc(set_union(Doms, dynamic([]))), Urls = array_sort_asc(set_union(Urls, dynamic([])))"
@@ -1857,13 +1859,13 @@
                                                     "runAfter": {},
                                                     "inputs": {
                                                         "method": "PUT",
-                                                        "uri": "https://management.azure.com/subscriptions/@{parameters('SubscriptionId')}/resourceGroups/@{parameters('ResourceGroupName')}/providers/Microsoft.OperationalInsights/workspaces/@{parameters('WorkspaceName')}/providers/Microsoft.SecurityInsights/bookmarks/50c8ada7-0000-4000-8000-@{substring(concat('000000000000', outputs('Extract_Backfill_Alarm_Id')), length(outputs('Extract_Backfill_Alarm_Id')), 12)}?api-version=2024-10-01-preview",
+                                                        "uri": "[concat(variables('_managementBaseUrl'), 'subscriptions/@{parameters(''SubscriptionId'')}/resourceGroups/@{parameters(''ResourceGroupName'')}/providers/Microsoft.OperationalInsights/workspaces/@{parameters(''WorkspaceName'')}/providers/Microsoft.SecurityInsights/bookmarks/50c8ada7-0000-4000-8000-@{substring(concat(''000000000000'', outputs(''Extract_Backfill_Alarm_Id'')), length(outputs(''Extract_Backfill_Alarm_Id'')), 12)}?api-version=2024-10-01-preview')]",
                                                         "headers": {
                                                             "Content-Type": "application/json"
                                                         },
                                                         "authentication": {
                                                             "type": "ManagedServiceIdentity",
-                                                            "audience": "https://management.azure.com"
+                                                            "audience": "[variables('_managementBaseUrl')]"
                                                         },
                                                         "body": {
                                                             "properties": {
@@ -1894,13 +1896,13 @@
                                                     },
                                                     "inputs": {
                                                         "method": "PUT",
-                                                        "uri": "https://management.azure.com@{items('For_Each_Missing_Entity')?['id']}/relations/50c8ada7-0000-4000-9000-@{substring(concat('000000000000', outputs('Extract_Backfill_Alarm_Id')), length(outputs('Extract_Backfill_Alarm_Id')), 12)}?api-version=2023-11-01",
+                                                        "uri": "[concat(variables('_managementBaseUrl'), '@{substring(items(''For_Each_Missing_Entity'')?[''id''], 1, sub(length(items(''For_Each_Missing_Entity'')?[''id'']), 1))}/relations/50c8ada7-0000-4000-9000-@{substring(concat(''000000000000'', outputs(''Extract_Backfill_Alarm_Id'')), length(outputs(''Extract_Backfill_Alarm_Id'')), 12)}?api-version=2023-11-01')]",
                                                         "headers": {
                                                             "Content-Type": "application/json"
                                                         },
                                                         "authentication": {
                                                             "type": "ManagedServiceIdentity",
-                                                            "audience": "https://management.azure.com"
+                                                            "audience": "[variables('_managementBaseUrl')]"
                                                         },
                                                         "body": {
                                                             "properties": {
@@ -1938,13 +1940,13 @@
                                                     },
                                                     "inputs": {
                                                         "method": "PUT",
-                                                        "uri": "https://management.azure.com@{items('For_Each_Missing_Entity')?['id']}/relations/50c8ada7-0000-4000-9000-@{substring(concat('000000000000', outputs('Extract_Backfill_Alarm_Id')), length(outputs('Extract_Backfill_Alarm_Id')), 12)}?api-version=2023-11-01",
+                                                        "uri": "[concat(variables('_managementBaseUrl'), '@{substring(items(''For_Each_Missing_Entity'')?[''id''], 1, sub(length(items(''For_Each_Missing_Entity'')?[''id'']), 1))}/relations/50c8ada7-0000-4000-9000-@{substring(concat(''000000000000'', outputs(''Extract_Backfill_Alarm_Id'')), length(outputs(''Extract_Backfill_Alarm_Id'')), 12)}?api-version=2023-11-01')]",
                                                         "headers": {
                                                             "Content-Type": "application/json"
                                                         },
                                                         "authentication": {
                                                             "type": "ManagedServiceIdentity",
-                                                            "audience": "https://management.azure.com"
+                                                            "audience": "[variables('_managementBaseUrl')]"
                                                         },
                                                         "body": {
                                                             "properties": {
