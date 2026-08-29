@@ -35,6 +35,13 @@
       "metadata": {
         "description": "Name for the workbook"
       }
+    },
+    "triggerStartTime": {
+      "type": "string",
+      "defaultValue": "[dateTimeAdd(utcNow(), 'PT3M')]",
+      "metadata": {
+        "description": "Logic App trigger start time, defaults to utcNow + 3 minutes for managed identity role propagation."
+      }
     }
   },
   "variables": {
@@ -169,7 +176,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Dashboard Workbook with template version 3.0.3",
+        "description": "SOCRadar-Dashboard Workbook with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('workbookVersion1')]",
@@ -258,7 +265,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Alarm-Overview_HuntingQueries Hunting Query with template version 3.0.3",
+        "description": "SOCRadar-Alarm-Overview_HuntingQueries Hunting Query with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject1').huntingQueryVersion1]",
@@ -343,7 +350,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Critical-Alarms_HuntingQueries Hunting Query with template version 3.0.3",
+        "description": "SOCRadar-Critical-Alarms_HuntingQueries Hunting Query with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject2').huntingQueryVersion2]",
@@ -428,7 +435,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Alarm-Trends_HuntingQueries Hunting Query with template version 3.0.3",
+        "description": "SOCRadar-Alarm-Trends_HuntingQueries Hunting Query with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject3').huntingQueryVersion3]",
@@ -513,7 +520,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Incident-Correlation_HuntingQueries Hunting Query with template version 3.0.3",
+        "description": "SOCRadar-Incident-Correlation_HuntingQueries Hunting Query with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject4').huntingQueryVersion4]",
@@ -598,7 +605,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Audit-Analysis_HuntingQueries Hunting Query with template version 3.0.3",
+        "description": "SOCRadar-Audit-Analysis_HuntingQueries Hunting Query with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject5').huntingQueryVersion5]",
@@ -683,7 +690,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadarCriticalAlarmDetection_AnalyticalRules Analytics Rule with template version 3.0.3",
+        "description": "SOCRadarCriticalAlarmDetection_AnalyticalRules Analytics Rule with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('analyticRuleObject1').analyticRuleVersion1]",
@@ -795,7 +802,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadarAlarmVolumeSpike_AnalyticalRules Analytics Rule with template version 3.0.3",
+        "description": "SOCRadarAlarmVolumeSpike_AnalyticalRules Analytics Rule with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('analyticRuleObject2').analyticRuleVersion2]",
@@ -894,7 +901,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadarUnsyncedClosedIncident_AnalyticalRules Analytics Rule with template version 3.0.3",
+        "description": "SOCRadarUnsyncedClosedIncident_AnalyticalRules Analytics Rule with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('analyticRuleObject3').analyticRuleVersion3]",
@@ -991,7 +998,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Alarm-Import Playbook with template version 3.0.3",
+        "description": "SOCRadar-Alarm-Import Playbook with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('playbookVersion1')]",
@@ -1084,7 +1091,7 @@
             },
             "triggerStartTime": {
               "type": "string",
-              "defaultValue": "[dateTimeAdd(utcNow(), 'PT3M')]",
+              "defaultValue": "[parameters('triggerStartTime')]",
               "metadata": {
                 "description": "The start time for the playbook trigger."
               }
@@ -2419,7 +2426,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Alarm-Sync Playbook with template version 3.0.3",
+        "description": "SOCRadar-Alarm-Sync Playbook with template version 3.0.2",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('playbookVersion2')]",
@@ -2460,7 +2467,7 @@
             },
             "triggerStartTime": {
               "type": "string",
-              "defaultValue": "[dateTimeAdd(utcNow(), 'PT3M')]",
+              "defaultValue": "[parameters('triggerStartTime')]",
               "metadata": {
                 "description": "The start time for the playbook trigger."
               }
