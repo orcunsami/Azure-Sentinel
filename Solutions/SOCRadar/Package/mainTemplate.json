@@ -35,13 +35,6 @@
       "metadata": {
         "description": "Name for the workbook"
       }
-    },
-    "triggerStartTime": {
-      "type": "string",
-      "defaultValue": "[dateTimeAdd(utcNow(), 'PT3M')]",
-      "metadata": {
-        "description": "Logic App trigger start time, defaults to utcNow + 3 minutes for managed identity role propagation."
-      }
     }
   },
   "variables": {
@@ -65,7 +58,7 @@
       "huntingQueryTemplateSpecName1": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('12a3dfda-ab80-4664-aed9-7f6f9f3b4a23')))]"
     },
     "huntingQueryObject2": {
-      "huntingQueryVersion2": "1.0.0",
+      "huntingQueryVersion2": "1.0.1",
       "_huntingQuerycontentId2": "ffa80945-44de-4900-bda5-9f1410c60166",
       "huntingQueryTemplateSpecName2": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('ffa80945-44de-4900-bda5-9f1410c60166')))]"
     },
@@ -84,7 +77,6 @@
       "_huntingQuerycontentId5": "afae44e5-e2e2-4f0e-9535-2aeb3766a847",
       "huntingQueryTemplateSpecName5": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('afae44e5-e2e2-4f0e-9535-2aeb3766a847')))]"
     },
-    "TemplateEmptyArray": "[json('[]')]",
     "analyticRuleObject1": {
       "analyticRuleVersion1": "1.0.1",
       "_analyticRulecontentId1": "8f3e2c5a-7b91-4d6a-9e8f-1c4a2b5d7e3f",
@@ -106,6 +98,7 @@
       "analyticRuleTemplateSpecName3": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-ar-',uniquestring('6e2f8d4b-5a71-4c9e-b3f6-8a1c9d4e7b2a')))]",
       "_analyticRulecontentProductId3": "[concat(take(variables('_solutionId'),50),'-','ar','-', uniqueString(concat(variables('_solutionId'),'-','AnalyticsRule','-','6e2f8d4b-5a71-4c9e-b3f6-8a1c9d4e7b2a','-', '1.0.0')))]"
     },
+    "TemplateEmptyArray": "[json('[]')]",
     "blanks": "[replace('b', 'b', '')]",
     "playbookVersion1": "1.0",
     "playbookContentId1": "SOCRadar-Alarm-Import",
@@ -176,7 +169,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Dashboard Workbook with template version 3.0.2",
+        "description": "SOCRadar-Dashboard Workbook with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('workbookVersion1')]",
@@ -265,7 +258,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Alarm-Overview_HuntingQueries Hunting Query with template version 3.0.2",
+        "description": "SOCRadar-Alarm-Overview_HuntingQueries Hunting Query with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject1').huntingQueryVersion1]",
@@ -295,14 +288,6 @@
                   {
                     "name": "techniques",
                     "value": "T1526"
-                  },
-                  {
-                    "name": "severity",
-                    "value": "Medium"
-                  },
-                  {
-                    "name": "entityMappings",
-                    "value": "[[{\"entityType\": \"Malware\", \"fieldMappings\": [{\"identifier\": \"Name\", \"columnName\": \"AlarmMainType\"}]}]"
                   }
                 ]
               }
@@ -358,7 +343,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Critical-Alarms_HuntingQueries Hunting Query with template version 3.0.2",
+        "description": "SOCRadar-Critical-Alarms_HuntingQueries Hunting Query with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject2').huntingQueryVersion2]",
@@ -388,14 +373,6 @@
                   {
                     "name": "techniques",
                     "value": "T1486"
-                  },
-                  {
-                    "name": "severity",
-                    "value": "High"
-                  },
-                  {
-                    "name": "entityMappings",
-                    "value": "[[{\"entityType\": \"Malware\", \"fieldMappings\": [{\"identifier\": \"Name\", \"columnName\": \"AlarmMainType\"}]}]"
                   }
                 ]
               }
@@ -437,9 +414,9 @@
         "contentId": "[variables('huntingQueryObject2')._huntingQuerycontentId2]",
         "contentKind": "HuntingQuery",
         "displayName": "SOCRadar Critical Alarms",
-        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject2')._huntingQuerycontentId2,'-', '1.0.0')))]",
-        "id": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject2')._huntingQuerycontentId2,'-', '1.0.0')))]",
-        "version": "1.0.0"
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject2')._huntingQuerycontentId2,'-', '1.0.1')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject2')._huntingQuerycontentId2,'-', '1.0.1')))]",
+        "version": "1.0.1"
       }
     },
     {
@@ -451,7 +428,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Alarm-Trends_HuntingQueries Hunting Query with template version 3.0.2",
+        "description": "SOCRadar-Alarm-Trends_HuntingQueries Hunting Query with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject3').huntingQueryVersion3]",
@@ -481,14 +458,6 @@
                   {
                     "name": "techniques",
                     "value": "T1526"
-                  },
-                  {
-                    "name": "severity",
-                    "value": "Medium"
-                  },
-                  {
-                    "name": "entityMappings",
-                    "value": "[[{\"entityType\": \"Malware\", \"fieldMappings\": [{\"identifier\": \"Name\", \"columnName\": \"AlarmMainType\"}]}]"
                   }
                 ]
               }
@@ -544,7 +513,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Incident-Correlation_HuntingQueries Hunting Query with template version 3.0.2",
+        "description": "SOCRadar-Incident-Correlation_HuntingQueries Hunting Query with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject4').huntingQueryVersion4]",
@@ -574,14 +543,6 @@
                   {
                     "name": "techniques",
                     "value": "T1526"
-                  },
-                  {
-                    "name": "severity",
-                    "value": "Medium"
-                  },
-                  {
-                    "name": "entityMappings",
-                    "value": "[[{\"entityType\": \"SecurityGroup\", \"fieldMappings\": [{\"identifier\": \"ObjectGuid\", \"columnName\": \"Status\"}]}]"
                   }
                 ]
               }
@@ -637,7 +598,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Audit-Analysis_HuntingQueries Hunting Query with template version 3.0.2",
+        "description": "SOCRadar-Audit-Analysis_HuntingQueries Hunting Query with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('huntingQueryObject5').huntingQueryVersion5]",
@@ -667,14 +628,6 @@
                   {
                     "name": "techniques",
                     "value": "T1526"
-                  },
-                  {
-                    "name": "severity",
-                    "value": "Low"
-                  },
-                  {
-                    "name": "entityMappings",
-                    "value": "[[{\"entityType\": \"CloudApplication\", \"fieldMappings\": [{\"identifier\": \"Name\", \"columnName\": \"EventType\"}]}]"
                   }
                 ]
               }
@@ -730,7 +683,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadarCriticalAlarmDetection_AnalyticalRules Analytics Rule with template version 3.0.2",
+        "description": "SOCRadarCriticalAlarmDetection_AnalyticalRules Analytics Rule with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('analyticRuleObject1').analyticRuleVersion1]",
@@ -756,7 +709,7 @@
                 "triggerOperator": "GreaterThan",
                 "triggerThreshold": 0,
                 "status": "Available",
-                "requiredDataConnectors": "[variables('TemplateEmptyArray')]",
+                "requiredDataConnectors": [],
                 "tactics": [
                   "Reconnaissance",
                   "InitialAccess"
@@ -770,12 +723,12 @@
                     "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AlarmMainType"
+                        "columnName": "AlarmMainType",
+                        "identifier": "Name"
                       },
                       {
-                        "identifier": "Category",
-                        "columnName": "AlarmSubType"
+                        "columnName": "AlarmSubType",
+                        "identifier": "Category"
                       }
                     ]
                   },
@@ -783,8 +736,8 @@
                     "entityType": "URL",
                     "fieldMappings": [
                       {
-                        "identifier": "Url",
-                        "columnName": "AlarmUrl"
+                        "columnName": "AlarmUrl",
+                        "identifier": "Url"
                       }
                     ]
                   }
@@ -842,7 +795,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadarAlarmVolumeSpike_AnalyticalRules Analytics Rule with template version 3.0.2",
+        "description": "SOCRadarAlarmVolumeSpike_AnalyticalRules Analytics Rule with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('analyticRuleObject2').analyticRuleVersion2]",
@@ -868,7 +821,7 @@
                 "triggerOperator": "GreaterThan",
                 "triggerThreshold": 0,
                 "status": "Available",
-                "requiredDataConnectors": "[variables('TemplateEmptyArray')]",
+                "requiredDataConnectors": [],
                 "tactics": [
                   "Impact",
                   "Exfiltration"
@@ -882,8 +835,8 @@
                     "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AccountName"
+                        "columnName": "AccountName",
+                        "identifier": "Name"
                       }
                     ]
                   }
@@ -941,7 +894,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadarUnsyncedClosedIncident_AnalyticalRules Analytics Rule with template version 3.0.2",
+        "description": "SOCRadarUnsyncedClosedIncident_AnalyticalRules Analytics Rule with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('analyticRuleObject3').analyticRuleVersion3]",
@@ -967,7 +920,7 @@
                 "triggerOperator": "GreaterThan",
                 "triggerThreshold": 0,
                 "status": "Available",
-                "requiredDataConnectors": "[variables('TemplateEmptyArray')]",
+                "requiredDataConnectors": [],
                 "tactics": [
                   "Discovery"
                 ],
@@ -979,8 +932,8 @@
                     "entityType": "Account",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AccountName"
+                        "columnName": "AccountName",
+                        "identifier": "Name"
                       }
                     ]
                   }
@@ -1038,7 +991,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Alarm-Import Playbook with template version 3.0.2",
+        "description": "SOCRadar-Alarm-Import Playbook with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('playbookVersion1')]",
@@ -1131,7 +1084,7 @@
             },
             "triggerStartTime": {
               "type": "string",
-              "defaultValue": "[parameters('triggerStartTime')]",
+              "defaultValue": "[dateTimeAdd(utcNow(), 'PT3M')]",
               "metadata": {
                 "description": "The start time for the playbook trigger."
               }
@@ -1997,7 +1950,7 @@
                                               "method": "put",
                                               "path": "[[concat('/Incidents/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('WorkspaceResourceGroup'), '/workspaces/', parameters('WorkspaceName'))]",
                                               "body": {
-                                                "title": "[SOCRadar] #@{items('For_Each_Alarm')?['alarm_id']} - @{if(greater(length(coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], '')), 200), concat(substring(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], 0, 197), '...'), coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], 'N/A'))}",
+                                                "title": "[[SOCRadar] #@{items('For_Each_Alarm')?['alarm_id']} - @{if(greater(length(coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], '')), 200), concat(substring(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], 0, 197), '...'), coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], 'N/A'))}",
                                                 "description": "@{concat('SOCRadar Alarm', decodeUriComponent('%0A'), decodeUriComponent('%0A'), 'Alarm ID: ', string(items('For_Each_Alarm')?['alarm_id']), decodeUriComponent('%0A'), decodeUriComponent('%0A'), 'Main Type: ', coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_main_type'], 'N/A'), decodeUriComponent('%0A'), decodeUriComponent('%0A'), 'Sub Type: ', coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_sub_type'], 'N/A'), decodeUriComponent('%0A'), decodeUriComponent('%0A'), 'Severity: ', items('For_Each_Alarm')?['alarm_risk_level'], decodeUriComponent('%0A'), decodeUriComponent('%0A'), 'Status: ', coalesce(items('For_Each_Alarm')?['status'], 'OPEN'), decodeUriComponent('%0A'), decodeUriComponent('%0A'), 'Created: ', items('For_Each_Alarm')?['date'], decodeUriComponent('%0A'), decodeUriComponent('%0A'), 'Details:', decodeUriComponent('%0A'), if(greater(length(coalesce(items('For_Each_Alarm')?['alarm_text'], '')), 1500), concat(substring(items('For_Each_Alarm')?['alarm_text'], 0, 1500), '...'), coalesce(items('For_Each_Alarm')?['alarm_text'], 'No details')), decodeUriComponent('%0A'), decodeUriComponent('%0A'), if(not(empty(items('For_Each_Alarm')?['content'])), concat('Content:', decodeUriComponent('%0A'), replace(replace(replace(replace(if(greater(length(string(items('For_Each_Alarm')?['content'])), 2000), concat(substring(string(items('For_Each_Alarm')?['content']), 0, 2000), '... [truncated]'), string(items('For_Each_Alarm')?['content'])), '\"', ''), '{', ''), '}', ''), ',', ' -*- '), decodeUriComponent('%0A'), decodeUriComponent('%0A')), ''), 'View in SOCRadar: https://platform.socradar.com/company/', items('For_Each_Alarm')?['company_id'], '/alarm/', items('For_Each_Alarm')?['alarm_id'])}",
                                                 "severity": "@{outputs('Map_Severity')}",
                                                 "status": "New",
@@ -2037,7 +1990,7 @@
                                             "Build_Base_Properties": {
                                               "type": "Compose",
                                               "inputs": {
-                                                "title": "[SOCRadar] #@{items('For_Each_Alarm')?['alarm_id']} - @{if(greater(length(coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], '')), 200), concat(substring(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], 0, 197), '...'), coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], 'N/A'))}",
+                                                "title": "[[SOCRadar] #@{items('For_Each_Alarm')?['alarm_id']} - @{if(greater(length(coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], '')), 200), concat(substring(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], 0, 197), '...'), coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_generic_title'], 'N/A'))}",
                                                 "description": "@{concat('SOCRadar Alarm - Status: ', items('For_Each_Alarm')?['status'], ' - Alarm ID: ', string(items('For_Each_Alarm')?['alarm_id']))}",
                                                 "severity": "@{outputs('Map_Severity')}",
                                                 "status": "Closed",
@@ -2466,7 +2419,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "SOCRadar-Alarm-Sync Playbook with template version 3.0.2",
+        "description": "SOCRadar-Alarm-Sync Playbook with template version 3.0.3",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('playbookVersion2')]",
@@ -2507,7 +2460,7 @@
             },
             "triggerStartTime": {
               "type": "string",
-              "defaultValue": "[parameters('triggerStartTime')]",
+              "defaultValue": "[dateTimeAdd(utcNow(), 'PT3M')]",
               "metadata": {
                 "description": "The start time for the playbook trigger."
               }
