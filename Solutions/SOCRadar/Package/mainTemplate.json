@@ -2088,7 +2088,7 @@
                                                   "AlarmType": "@{coalesce(items('For_Each_Alarm')?['alarm_type_details']?['alarm_main_type'], 'N/A')}",
                                                   "Status": "@{items('For_Each_Alarm')?['status']}",
                                                   "Severity": "@{items('For_Each_Alarm')?['alarm_risk_level']}",
-                                                  "Message": "Alarm imported to Sentinel",
+                                                  "Message": "Alarm imported to Microsoft Sentinel",
                                                   "FullAlarmJson": "@items('For_Each_Alarm')"
                                                 }
                                               ]
