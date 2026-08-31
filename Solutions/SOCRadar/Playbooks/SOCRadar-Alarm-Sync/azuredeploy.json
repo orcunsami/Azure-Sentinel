@@ -84,7 +84,7 @@
             "type": "bool",
             "defaultValue": false,
             "metadata": {
-                "description": "Push the Microsoft Sentinel incident severity back to SOCRadar when an incident is closed. Off by default: Microsoft Sentinel has no Critical severity, so a CRITICAL alarm imports as High and writing that back would silently downgrade the alarm on SOCRadar."
+                "description": "Push the Microsoft Sentinel incident severity back to SOCRadar when an incident is closed. Off by default: Microsoft Sentinel has no Critical severity, so SOCRadar remains the authority on alarm severity unless this is explicitly enabled."
             }
         }
     },
