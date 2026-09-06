@@ -71,6 +71,7 @@ flowchart LR
 - Severity and status mapping
 - Tags for categorization (SOCRadar, alarm type, sub type)
 - Optional closed alarm import with classification
+- Incident mode: `Direct` creates incidents through the Microsoft Sentinel API; `AlertBacked` writes each alarm to `SOCRadar_Alarms_CL` and deploys a scheduled analytics rule that raises the incident, so it also appears in the Microsoft Defender portal's incident queue
 
 **Bidirectional Sync**
 - Closed incidents in Microsoft Sentinel update alarm status in SOCRadar
@@ -103,7 +104,7 @@ Logic Apps start 3 minutes after deployment to allow Azure role propagation.
 
 | Playbook | Description |
 |----------|-------------|
-| [SOCRadar-Alarm-Import](Playbooks/SOCRadar-Alarm-Import) | Imports SOCRadar alarms as Microsoft Sentinel incidents. Provisions the DCE, custom log tables, and DCRs required by this solution. |
+| [SOCRadar-Alarm-Import](Playbooks/SOCRadar-Alarm-Import) | Imports SOCRadar alarms as Microsoft Sentinel incidents, directly or through a scheduled analytics rule (`IncidentMode`). Provisions the DCE, custom log tables, and DCRs required by this solution. |
 | [SOCRadar-Alarm-Sync](Playbooks/SOCRadar-Alarm-Sync) | Syncs closed Microsoft Sentinel incidents back to SOCRadar with classification mapping. |
 
 Both playbooks use Managed Identity for authentication.

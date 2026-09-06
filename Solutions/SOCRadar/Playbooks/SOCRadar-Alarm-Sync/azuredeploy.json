@@ -289,6 +289,88 @@
                                         ]
                                     }
                                 },
+                                "Check_Needs_Entity_Lookup": {
+                                    "type": "If",
+                                    "expression": {
+                                        "and": [
+                                            {
+                                                "equals": [
+                                                    "@outputs('Extract_Alarm_ID')",
+                                                    ""
+                                                ]
+                                            },
+                                            {
+                                                "equals": [
+                                                    "@items('For_Each_Incident')?['properties']?['status']",
+                                                    "Closed"
+                                                ]
+                                            },
+                                            {
+                                                "equals": [
+                                                    "@outputs('Check_Has_Synced_Tag')",
+                                                    false
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "actions": {
+                                        "Get_Incident_Entities": {
+                                            "type": "Http",
+                                            "inputs": {
+                                                "method": "POST",
+                                                "uri": "[concat(variables('_managementBaseUrl'), 'subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('WorkspaceResourceGroup'), '/providers/Microsoft.OperationalInsights/workspaces/', parameters('WorkspaceName'), '/providers/Microsoft.SecurityInsights/incidents/@{items(''For_Each_Incident'')?[''name'']}/entities?api-version=2023-11-01')]",
+                                                "authentication": {
+                                                    "type": "ManagedServiceIdentity"
+                                                },
+                                                "retryPolicy": {
+                                                    "type": "exponential",
+                                                    "count": 4,
+                                                    "interval": "PT10S",
+                                                    "maximumInterval": "PT1M"
+                                                }
+                                            },
+                                            "runAfter": {}
+                                        },
+                                        "Filter_Alarm_Url_Entities": {
+                                            "type": "Query",
+                                            "inputs": {
+                                                "from": "@coalesce(body('Get_Incident_Entities')?['entities'], json('[]'))",
+                                                "where": "@and(equals(item()?['kind'], 'Url'), contains(string(coalesce(item()?['properties']?['url'], '')), '/alarm/'))"
+                                            },
+                                            "runAfter": {
+                                                "Get_Incident_Entities": [
+                                                    "Succeeded"
+                                                ]
+                                            }
+                                        },
+                                        "Alarm_ID_From_Entities": {
+                                            "type": "Compose",
+                                            "inputs": "@if(greater(length(body('Filter_Alarm_Url_Entities')), 0), first(split(first(split(last(split(string(first(body('Filter_Alarm_Url_Entities'))?['properties']?['url']), '/alarm/')), '?')), '/')), '')",
+                                            "runAfter": {
+                                                "Filter_Alarm_Url_Entities": [
+                                                    "Succeeded"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "else": {
+                                        "actions": {}
+                                    },
+                                    "runAfter": {
+                                        "Check_Has_Synced_Tag": [
+                                            "Succeeded"
+                                        ]
+                                    }
+                                },
+                                "Resolve_Alarm_ID": {
+                                    "type": "Compose",
+                                    "inputs": "@if(empty(outputs('Extract_Alarm_ID')), coalesce(actions('Alarm_ID_From_Entities')?['outputs'], ''), outputs('Extract_Alarm_ID'))",
+                                    "runAfter": {
+                                        "Check_Needs_Entity_Lookup": [
+                                            "Succeeded"
+                                        ]
+                                    }
+                                },
                                 "Check_If_Closed_And_Not_Synced": {
                                     "type": "If",
                                     "expression": {
@@ -308,7 +390,7 @@
                                             {
                                                 "not": {
                                                     "equals": [
-                                                        "@outputs('Extract_Alarm_ID')",
+                                                        "@outputs('Resolve_Alarm_ID')",
                                                         ""
                                                     ]
                                                 }
@@ -326,7 +408,7 @@
                                                     "Content-Type": "application/json"
                                                 },
                                                 "body": {
-                                                    "alarm_ids": "@createArray(int(outputs('Extract_Alarm_ID')))",
+                                                    "alarm_ids": "@createArray(int(outputs('Resolve_Alarm_ID')))",
                                                     "status": "@{if(equals(items('For_Each_Incident')?['properties']?['classification'], 'FalsePositive'), 9, if(equals(items('For_Each_Incident')?['properties']?['classification'], 'BenignPositive'), 12, 2))}",
                                                     "comments": "Closed in Microsoft Sentinel (Classification: @{coalesce(items('For_Each_Incident')?['properties']?['classification'], 'Unclassified')})"
                                                 },
@@ -426,14 +508,32 @@
                                                     "runAfter": {},
                                                     "inputs": "@if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]'))), 'SOCRadar-Severity-CRITICAL'), 'CRITICAL', if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]'))), 'SOCRadar-Severity-HIGH'), 'HIGH', if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]'))), 'SOCRadar-Severity-MEDIUM'), 'MEDIUM', if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]'))), 'SOCRadar-Severity-LOW'), 'LOW', if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]'))), 'SOCRadar-Severity-INFO'), 'INFO', '')))))"
                                                 },
-                                                "Rank_SOCRadar_Severity": {
+                                                "Severity_From_Description": {
                                                     "type": "Compose",
+                                                    "inputs": "@if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['description'], '')), 'SOCRadar severity: CRITICAL'), 'CRITICAL', if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['description'], '')), 'SOCRadar severity: HIGH'), 'HIGH', if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['description'], '')), 'SOCRadar severity: MEDIUM'), 'MEDIUM', if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['description'], '')), 'SOCRadar severity: LOW'), 'LOW', if(contains(string(coalesce(items('For_Each_Incident')?['properties']?['description'], '')), 'SOCRadar severity: INFO'), 'INFO', '')))))",
                                                     "runAfter": {
                                                         "Extract_SOCRadar_Severity": [
                                                             "Succeeded"
                                                         ]
+                                                    }
+                                                },
+                                                "Resolve_SOCRadar_Severity": {
+                                                    "type": "Compose",
+                                                    "inputs": "@if(empty(outputs('Extract_SOCRadar_Severity')), outputs('Severity_From_Description'), outputs('Extract_SOCRadar_Severity'))",
+                                                    "runAfter": {
+                                                        "Severity_From_Description": [
+                                                            "Succeeded"
+                                                        ]
+                                                    }
+                                                },
+                                                "Rank_SOCRadar_Severity": {
+                                                    "type": "Compose",
+                                                    "runAfter": {
+                                                        "Resolve_SOCRadar_Severity": [
+                                                            "Succeeded"
+                                                        ]
                                                     },
-                                                    "inputs": "@if(equals(outputs('Extract_SOCRadar_Severity'), 'CRITICAL'), 5, if(equals(outputs('Extract_SOCRadar_Severity'), 'HIGH'), 4, if(equals(outputs('Extract_SOCRadar_Severity'), 'MEDIUM'), 3, if(equals(outputs('Extract_SOCRadar_Severity'), 'LOW'), 2, if(equals(outputs('Extract_SOCRadar_Severity'), 'INFO'), 1, 0)))))"
+                                                    "inputs": "@if(equals(outputs('Resolve_SOCRadar_Severity'), 'CRITICAL'), 5, if(equals(outputs('Resolve_SOCRadar_Severity'), 'HIGH'), 4, if(equals(outputs('Resolve_SOCRadar_Severity'), 'MEDIUM'), 3, if(equals(outputs('Resolve_SOCRadar_Severity'), 'LOW'), 2, if(equals(outputs('Resolve_SOCRadar_Severity'), 'INFO'), 1, 0)))))"
                                                 },
                                                 "Rank_Sentinel_Severity": {
                                                     "type": "Compose",
@@ -483,7 +583,7 @@
                                                                     "Content-Type": "application/json"
                                                                 },
                                                                 "body": {
-                                                                    "alarm_ids": "@createArray(int(outputs('Extract_Alarm_ID')))",
+                                                                    "alarm_ids": "@createArray(int(outputs('Resolve_Alarm_ID')))",
                                                                     "severity": "@{outputs('Map_Severity')}"
                                                                 },
                                                                 "retryPolicy": {
@@ -530,7 +630,7 @@
                                                                     "Log_Severity_Write_Failed": {
                                                                         "type": "Compose",
                                                                         "runAfter": {},
-                                                                        "inputs": "@concat('SOCRadar rejected the severity update for alarm ', outputs('Extract_Alarm_ID'), ': ', string(coalesce(body('Update_SOCRadar_Severity')?['message'], 'no message returned')))"
+                                                                        "inputs": "@concat('SOCRadar rejected the severity update for alarm ', outputs('Resolve_Alarm_ID'), ': ', string(coalesce(body('Update_SOCRadar_Severity')?['message'], 'no message returned')))"
                                                                     }
                                                                 }
                                                             }
@@ -555,7 +655,7 @@
                                         "actions": {}
                                     },
                                     "runAfter": {
-                                        "Check_Has_Synced_Tag": [
+                                        "Resolve_Alarm_ID": [
                                             "Succeeded"
                                         ]
                                     }
