@@ -71,7 +71,7 @@ flowchart LR
 - Severity and status mapping
 - Tags for categorization (SOCRadar, alarm type, sub type)
 - Optional closed alarm import with classification
-- Incident mode: `Direct` creates incidents through the Microsoft Sentinel API; `AlertBacked` writes each alarm to `SOCRadar_Alarms_CL` and deploys a scheduled analytics rule that raises the incident, so it also appears in the Microsoft Defender portal's incident queue
+- Incident mode: `Direct` creates incidents through the Microsoft Sentinel API; `AlertBacked` writes each alarm to `SOCRadar_Alarms_CL` and deploys a scheduled analytics rule that raises the incident, so it also appears in the Microsoft Defender portal's incident queue. In that mode the **SOCRadar High or Critical Severity Alarm** analytics rule template is redundant (every open alarm already raises an incident); leave it disabled
 
 **Bidirectional Sync**
 - Closed incidents in Microsoft Sentinel update alarm status in SOCRadar
