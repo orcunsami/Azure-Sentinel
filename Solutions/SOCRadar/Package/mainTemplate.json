@@ -560,7 +560,7 @@
                 "eTag": "*",
                 "displayName": "SOCRadar Incident Correlation",
                 "category": "Hunting Queries",
-                "query": "SecurityIncident\n| where Labels has \"SOCRadar\"\n| summarize Count=count() by Status, Classification\n| order by Count desc\n",
+                "query": "SecurityIncident\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\n| where Labels has \"SOCRadar\"\n| summarize Count=count() by Status, Classification\n| order by Count desc\n",
                 "version": 2,
                 "tags": [
                   {
@@ -767,7 +767,6 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Malware",
                     "fieldMappings": [
                       {
                         "columnName": "AlarmMainType",
@@ -777,16 +776,17 @@
                         "columnName": "AlarmSubType",
                         "identifier": "Category"
                       }
-                    ]
+                    ],
+                    "entityType": "Malware"
                   },
                   {
-                    "entityType": "URL",
                     "fieldMappings": [
                       {
                         "columnName": "AlarmUrl",
                         "identifier": "Url"
                       }
-                    ]
+                    ],
+                    "entityType": "URL"
                   }
                 ]
               }
@@ -879,13 +879,13 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Malware",
                     "fieldMappings": [
                       {
                         "columnName": "AccountName",
                         "identifier": "Name"
                       }
-                    ]
+                    ],
+                    "entityType": "Malware"
                   }
                 ]
               }
@@ -958,7 +958,7 @@
                 "description": "Detects Microsoft Sentinel incidents tagged as SOCRadar that were closed more than 30 minutes ago but do not have the Synced tag. This may indicate the SOCRadar-Alarm-Sync playbook has failed to update the SOCRadar platform with the closure status.",
                 "displayName": "SOCRadar Unsynced Closed Incident",
                 "enabled": false,
-                "query": "SecurityIncident\n| where Labels has \"SOCRadar\"\n| where Status == \"Closed\"\n| where LastModifiedTime < ago(30m)\n| where not(Labels has \"Synced\")\n| extend AlarmId = extract(@\"#(\\d+)\", 1, Title)\n| extend AccountName = AlarmId\n| project TimeGenerated, IncidentName, Title, Status, Classification, LastModifiedTime, AlarmId, AccountName\n",
+                "query": "SecurityIncident\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\n| where Labels has \"SOCRadar\"\n| where Status == \"Closed\"\n| where LastModifiedTime < ago(30m)\n| where not(Labels has \"Synced\")\n| extend AlarmId = extract(@\"#(\\d+)\", 1, Title)\n| extend AccountName = AlarmId\n| project TimeGenerated, IncidentName, Title, Status, Classification, LastModifiedTime, AlarmId, AccountName\n",
                 "queryFrequency": "PT1H",
                 "queryPeriod": "P1D",
                 "severity": "Low",
@@ -976,13 +976,13 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Account",
                     "fieldMappings": [
                       {
                         "columnName": "AccountName",
                         "identifier": "Name"
                       }
-                    ]
+                    ],
+                    "entityType": "Account"
                   }
                 ]
               }
@@ -1699,9 +1699,8 @@
                       "type": "Compose",
                       "inputs": "@if(empty(coalesce(body('Read_Checkpoint')?['LastRunUtc'], '')), parameters('InitialLookbackMinutes'), min(max(add(div(sub(ticks(utcNow()), ticks(coalesce(body('Read_Checkpoint')?['LastRunUtc'], utcNow()))), 600000000), 15), max(mul(parameters('PollingIntervalMinutes'), 6), 60)), 10080))",
                       "runAfter": {
-                        "Read_Checkpoint": [
-                          "Succeeded",
-                          "Failed"
+                        "Check_Checkpoint_Read": [
+                          "Succeeded"
                         ]
                       }
                     },
@@ -1743,7 +1742,7 @@
                         ]
                       },
                       "runAfter": {
-                        "Initialize_Existing_Incidents": [
+                        "Initialize_Incidents_Truncated": [
                           "Succeeded"
                         ]
                       }
@@ -1819,7 +1818,7 @@
                         "select": "@if(contains(coalesce(item()?['properties']?['title'], ''), '#'), split(split(coalesce(item()?['properties']?['title'], ''), '#')[1], ' ')[0], '')"
                       },
                       "runAfter": {
-                        "Pagination_Loop_Incidents": [
+                        "Check_Incidents_Complete": [
                           "Succeeded"
                         ]
                       }
@@ -1995,6 +1994,9 @@
                                       "type": "integer"
                                     }
                                   }
+                                },
+                                "is_success": {
+                                  "type": "boolean"
                                 }
                               }
                             }
@@ -2038,7 +2040,7 @@
                             "and": [
                               {
                                 "equals": [
-                                  "@coalesce(body('Parse_Page_Response')?['is_success'], true)",
+                                  "@coalesce(body('Parse_Page_Response')?['is_success'], false)",
                                   true
                                 ]
                               }
@@ -3094,7 +3096,7 @@
                           "actions": {
                             "Extract_Backfill_Alarm_Id": {
                               "type": "Compose",
-                              "inputs": "@first(split(last(split(coalesce(items('For_Each_Missing_Entity')?['properties']?['title'], ''), '#')), ' '))"
+                              "inputs": "@first(split(split(coalesce(items('For_Each_Missing_Entity')?['properties']?['title'], ''), '#')[1], ' '))"
                             },
                             "Fetch_Backfill_Alarm": {
                               "type": "Http",
@@ -3405,6 +3407,18 @@
                               "@variables('marker_read_failed')",
                               false
                             ]
+                          },
+                          {
+                            "equals": [
+                              "@variables('checkpoint_read_failed')",
+                              false
+                            ]
+                          },
+                          {
+                            "equals": [
+                              "@variables('incidents_truncated')",
+                              false
+                            ]
                           }
                         ]
                       },
@@ -3467,7 +3481,7 @@
                               "runStatus": "Failed",
                               "runError": {
                                 "code": "ImportIncomplete",
-                                "message": "@concat('SOCRadar alarm import read ', string(variables('pages_read')), ' of ', string(variables('total_pages')), ' page(s)', if(equals(variables('marker_read_failed'), true), '; a seen-marker read in For_Each_Alarm_AlertBacked returned neither 200 nor 404, so the checkpoint was held', ''), '. Open Pagination_Loop in this run to see which page failed.')"
+                                "message": "@concat('SOCRadar alarm import read ', string(variables('pages_read')), ' of ', string(variables('total_pages')), ' page(s)', if(equals(variables('marker_read_failed'), true), '; a seen-marker read in For_Each_Alarm_AlertBacked returned neither 200 nor 404, so the checkpoint was held', ''), if(equals(variables('checkpoint_read_failed'), true), '; Read_Checkpoint returned neither 200 nor 404, so the checkpoint was held and the window was not advanced', ''), if(equals(variables('incidents_truncated'), true), '; the existing-incident query in Pagination_Loop_Incidents stopped before its last page, so the deduplication list was incomplete and the checkpoint was held', ''), '. Open ', if(equals(variables('checkpoint_read_failed'), true), 'Read_Checkpoint', if(equals(variables('incidents_truncated'), true), 'Pagination_Loop_Incidents', if(equals(variables('marker_read_failed'), true), 'For_Each_Alarm_AlertBacked', 'Pagination_Loop'))), ' in this run to see what failed.')"
                               }
                             }
                           }
@@ -3506,8 +3520,110 @@
                         }
                       },
                       "runAfter": {
+                        "Initialize_Checkpoint_Read_Failed": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Initialize_Checkpoint_Read_Failed": {
+                      "type": "InitializeVariable",
+                      "inputs": {
+                        "variables": [
+                          {
+                            "name": "checkpoint_read_failed",
+                            "type": "boolean",
+                            "value": false
+                          }
+                        ]
+                      },
+                      "runAfter": {
                         "Capture_Run_Start": [
                           "Succeeded"
+                        ]
+                      }
+                    },
+                    "Check_Checkpoint_Read": {
+                      "type": "If",
+                      "expression": {
+                        "or": [
+                          {
+                            "equals": [
+                              "@outputs('Read_Checkpoint')?['statusCode']",
+                              200
+                            ]
+                          },
+                          {
+                            "equals": [
+                              "@outputs('Read_Checkpoint')?['statusCode']",
+                              404
+                            ]
+                          }
+                        ]
+                      },
+                      "else": {
+                        "actions": {
+                          "Flag_Checkpoint_Read_Failed": {
+                            "type": "SetVariable",
+                            "inputs": {
+                              "name": "checkpoint_read_failed",
+                              "value": true
+                            }
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "Read_Checkpoint": [
+                          "Succeeded",
+                          "Failed",
+                          "TimedOut"
+                        ]
+                      }
+                    },
+                    "Initialize_Incidents_Truncated": {
+                      "type": "InitializeVariable",
+                      "inputs": {
+                        "variables": [
+                          {
+                            "name": "incidents_truncated",
+                            "type": "boolean",
+                            "value": false
+                          }
+                        ]
+                      },
+                      "runAfter": {
+                        "Initialize_Existing_Incidents": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Check_Incidents_Complete": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@variables('incidents_next_link')",
+                              ""
+                            ]
+                          }
+                        ]
+                      },
+                      "else": {
+                        "actions": {
+                          "Flag_Incidents_Truncated": {
+                            "type": "SetVariable",
+                            "inputs": {
+                              "name": "incidents_truncated",
+                              "value": true
+                            }
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "Pagination_Loop_Incidents": [
+                          "Succeeded",
+                          "Failed",
+                          "TimedOut"
                         ]
                       }
                     }
@@ -4304,6 +4420,14 @@
                                 "Update_SOCRadar_Status": [
                                   "Succeeded"
                                 ]
+                              },
+                              "else": {
+                                "actions": {
+                                  "Log_SOCRadar_Write_Failed": {
+                                    "type": "Compose",
+                                    "inputs": "@concat('SOCRadar rejected the status update for alarm ', string(coalesce(outputs('Resolve_Alarm_ID'), '')), ': ', string(coalesce(body('Update_SOCRadar_Status'), outputs('Update_SOCRadar_Status')?['statusCode'], 'no response')))"
+                                  }
+                                }
                               }
                             },
                             "Check_Severity_Sync_Enabled": {
