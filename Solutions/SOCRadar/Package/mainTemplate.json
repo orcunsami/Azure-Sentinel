@@ -773,26 +773,26 @@
                 ],
                 "entityMappings": [
                   {
+                    "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AlarmMainType"
+                        "columnName": "AlarmMainType",
+                        "identifier": "Name"
                       },
                       {
-                        "identifier": "Category",
-                        "columnName": "AlarmSubType"
+                        "columnName": "AlarmSubType",
+                        "identifier": "Category"
                       }
-                    ],
-                    "entityType": "Malware"
+                    ]
                   },
                   {
+                    "entityType": "URL",
                     "fieldMappings": [
                       {
-                        "identifier": "Url",
-                        "columnName": "AlarmUrl"
+                        "columnName": "AlarmUrl",
+                        "identifier": "Url"
                       }
-                    ],
-                    "entityType": "URL"
+                    ]
                   }
                 ]
               }
@@ -885,13 +885,13 @@
                 ],
                 "entityMappings": [
                   {
+                    "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AccountName"
+                        "columnName": "AccountName",
+                        "identifier": "Name"
                       }
-                    ],
-                    "entityType": "Malware"
+                    ]
                   }
                 ]
               }
@@ -982,13 +982,13 @@
                 ],
                 "entityMappings": [
                   {
+                    "entityType": "Account",
                     "fieldMappings": [
                       {
-                        "identifier": "Name",
-                        "columnName": "AccountName"
+                        "columnName": "AccountName",
+                        "identifier": "Name"
                       }
-                    ],
-                    "entityType": "Account"
+                    ]
                   }
                 ]
               }
@@ -1824,7 +1824,7 @@
                         },
                         "Flag_Incidents_Query_Failed": {
                           "runAfter": {
-                            "Query_Incidents_Page": [
+                            "Project_Incidents_Page": [
                               "Failed",
                               "TimedOut",
                               "Skipped"
