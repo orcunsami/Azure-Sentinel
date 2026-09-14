@@ -118,7 +118,13 @@
     "_playbookContentId2": "[variables('playbookContentId2')]",
     "playbookId2": "[resourceId('Microsoft.Logic/workflows', variables('playbookContentId2'))]",
     "playbookTemplateSpecName2": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-pl-',uniquestring(variables('_playbookContentId2'))))]",
-    "_playbookcontentProductId2": "[concat(take(variables('_solutionId'),50),'-','pl','-', uniqueString(concat(variables('_solutionId'),'-','Playbook','-',variables('_playbookContentId2'),'-', variables('playbookVersion2'))))]"
+    "_playbookcontentProductId2": "[concat(take(variables('_solutionId'),50),'-','pl','-', uniqueString(concat(variables('_solutionId'),'-','Playbook','-',variables('_playbookContentId2'),'-', variables('playbookVersion2'))))]",
+    "playbookVersion3": "1.0",
+    "playbookContentId3": "SOCRadar-IOC-Enrichment",
+    "_playbookContentId3": "[variables('playbookContentId3')]",
+    "playbookId3": "[resourceId('Microsoft.Logic/workflows', variables('playbookContentId3'))]",
+    "playbookTemplateSpecName3": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-pl-',uniquestring(variables('_playbookContentId3'))))]",
+    "_playbookcontentProductId3": "[concat(take(variables('_solutionId'),50),'-','pl','-', uniqueString(concat(variables('_solutionId'),'-','Playbook','-',variables('_playbookContentId3'),'-', variables('playbookVersion3'))))]"
   },
   "resources": [
     {
@@ -131,7 +137,7 @@
         "contentSchemaVersion": "3.0.0",
         "displayName": "SOCRadar",
         "publisherDisplayName": "SOCRadar",
-        "descriptionHtml": "<p><strong>Note:</strong> Please refer to the following before installing the solution:</p>\n<p>• Review the solution <a href=\"https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/SOCRadar/ReleaseNotes.md\">Release Notes</a></p>\n<p>• There may be <a href=\"https://aka.ms/sentinelsolutionsknownissues\">known issues</a> pertaining to this Solution, please refer to them before installing.</p>\n<p>The <a href=\"https://socradar.io/\">SOCRadar</a> solution for Microsoft Sentinel provides bidirectional integration between SOCRadar XTI Platform and Microsoft Sentinel. Import alarms as incidents, sync closed incidents back to SOCRadar with classification mapping.</p>\n<p><strong>Workbooks:</strong> 1, <strong>Analytic Rules:</strong> 3, <strong>Hunting Queries:</strong> 5, <strong>Playbooks:</strong> 2</p>\n<p><a href=\"https://aka.ms/azuresentinel\">Learn more about Microsoft Sentinel</a> | <a href=\"https://aka.ms/azuresentinelsolutionsdoc\">Learn more about Solutions</a></p>\n",
+        "descriptionHtml": "<p><strong>Note:</strong> Please refer to the following before installing the solution:</p>\n<p>• Review the solution <a href=\"https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/SOCRadar/ReleaseNotes.md\">Release Notes</a></p>\n<p>• There may be <a href=\"https://aka.ms/sentinelsolutionsknownissues\">known issues</a> pertaining to this Solution, please refer to them before installing.</p>\n<p>The <a href=\"https://socradar.io/\">SOCRadar</a> solution for Microsoft Sentinel provides bidirectional integration between SOCRadar XTI Platform and Microsoft Sentinel. Import alarms as incidents, sync closed incidents back to SOCRadar with classification mapping.</p>\n<p><strong>Workbooks:</strong> 1, <strong>Analytic Rules:</strong> 3, <strong>Hunting Queries:</strong> 5, <strong>Playbooks:</strong> 3</p>\n<p><a href=\"https://aka.ms/azuresentinel\">Learn more about Microsoft Sentinel</a> | <a href=\"https://aka.ms/azuresentinelsolutionsdoc\">Learn more about Solutions</a></p>\n",
         "contentKind": "Solution",
         "contentProductId": "[variables('_solutioncontentProductId')]",
         "id": "[variables('_solutioncontentProductId')]",
@@ -767,26 +773,26 @@
                 ],
                 "entityMappings": [
                   {
+                    "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "columnName": "AlarmMainType",
-                        "identifier": "Name"
+                        "identifier": "Name",
+                        "columnName": "AlarmMainType"
                       },
                       {
-                        "columnName": "AlarmSubType",
-                        "identifier": "Category"
+                        "identifier": "Category",
+                        "columnName": "AlarmSubType"
                       }
-                    ],
-                    "entityType": "Malware"
+                    ]
                   },
                   {
+                    "entityType": "URL",
                     "fieldMappings": [
                       {
-                        "columnName": "AlarmUrl",
-                        "identifier": "Url"
+                        "identifier": "Url",
+                        "columnName": "AlarmUrl"
                       }
-                    ],
-                    "entityType": "URL"
+                    ]
                   }
                 ]
               }
@@ -879,13 +885,13 @@
                 ],
                 "entityMappings": [
                   {
+                    "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "columnName": "AccountName",
-                        "identifier": "Name"
+                        "identifier": "Name",
+                        "columnName": "AccountName"
                       }
-                    ],
-                    "entityType": "Malware"
+                    ]
                   }
                 ]
               }
@@ -976,13 +982,13 @@
                 ],
                 "entityMappings": [
                   {
+                    "entityType": "Account",
                     "fieldMappings": [
                       {
-                        "columnName": "AccountName",
-                        "identifier": "Name"
+                        "identifier": "Name",
+                        "columnName": "AccountName"
                       }
-                    ],
-                    "entityType": "Account"
+                    ]
                   }
                 ]
               }
@@ -4698,6 +4704,683 @@
         "contentProductId": "[variables('_playbookcontentProductId2')]",
         "id": "[variables('_playbookcontentProductId2')]",
         "version": "[variables('playbookVersion2')]"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('playbookTemplateSpecName3')]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-IOC-Enrichment Playbook with template version 3.0.2",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('playbookVersion3')]",
+          "parameters": {
+            "PlaybookName": {
+              "type": "string",
+              "defaultValue": "SOCRadar-IOC-Enrichment",
+              "metadata": {
+                "description": "Name of the Logic App"
+              }
+            },
+            "SOCRadarAPIKey": {
+              "type": "securestring",
+              "metadata": {
+                "description": "SOCRadar API Key (same key used by SOCRadar-Alarm-Import / SOCRadar-Alarm-Sync). Used here to fetch the original alarm's related entities. Also used for IOC enrichment if SOCRadarIoCAPIKey is left empty."
+              }
+            },
+            "SOCRadarIoCAPIKey": {
+              "type": "securestring",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Separate SOCRadar IOC Enrichment API key (Standard Licensed APIs / advanced tier). Leave empty to use SOCRadarAPIKey for enrichment calls too."
+              }
+            },
+            "CompanyId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "SOCRadar Company ID. Used to fetch the original alarm's related entities from SOCRadar for incidents created by SOCRadar-Alarm-Import (which carry no Microsoft Sentinel entities). Leave empty to enrich only Microsoft Sentinel-provided entities."
+              }
+            },
+            "WorkspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Microsoft Sentinel Log Analytics Workspace Name"
+              }
+            },
+            "WorkspaceResourceGroup": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().name]",
+              "metadata": {
+                "description": "Resource group of existing Microsoft Sentinel workspace. Leave default if workspace is in same resource group."
+              }
+            },
+            "RiskScoreThreshold": {
+              "type": "int",
+              "defaultValue": 0,
+              "minValue": 0,
+              "maxValue": 100,
+              "metadata": {
+                "description": "Only post an enrichment comment when the SOCRadar risk score is greater than or equal to this value. Default 0 = comment on every indicator that has signal (benign whitelisted indicators with score 0 are skipped to reduce noise)."
+              }
+            },
+            "MaxIndicators": {
+              "type": "int",
+              "defaultValue": 20,
+              "minValue": 1,
+              "maxValue": 100,
+              "metadata": {
+                "description": "Maximum indicators enriched per incident. Each enrichment consumes one SOCRadar API credit."
+              }
+            },
+            "SentinelServicePrincipalObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Object ID of the Azure Security Insights service principal. Microsoft Sentinel needs Automation Contributor on this resource group to run the playbook. Leave empty to grant it later from Microsoft Sentinel > Settings > Playbook permissions."
+              }
+            },
+            "SentinelRoleLevel": {
+              "type": "string",
+              "defaultValue": "Responder",
+              "allowedValues": [
+                "Contributor",
+                "Responder"
+              ],
+              "metadata": {
+                "description": "Microsoft Sentinel role for the Logic App. Responder is sufficient for reading incidents and adding comments (least-privilege)."
+              }
+            }
+          },
+          "variables": {
+            "SentinelConnectionName": "[[concat('azuresentinel-', parameters('PlaybookName'))]",
+            "SentinelContributorRoleId": "ab8e14d6-4a74-4a29-9ba8-549422addade",
+            "SentinelResponderRoleId": "3e150937-b8fe-4cfb-8069-0eaf05ecd056",
+            "SentinelAutomationContributorRoleId": "f4c81013-99ee-4d62-a7ee-b3f1f648599a",
+            "sentinelRoleDefinitionId": "[[if(equals(parameters('SentinelRoleLevel'), 'Responder'), variables('SentinelResponderRoleId'), variables('SentinelContributorRoleId'))]",
+            "workspaceResourceId": "[[resourceId(parameters('WorkspaceResourceGroup'), 'Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+            "isExternalWorkspace": "[[not(equals(parameters('WorkspaceResourceGroup'), resourceGroup().name))]",
+            "connection-1": "[[subscriptionResourceId('Microsoft.Web/locations/managedApis', variables('workspace-location-inline'), 'azuresentinel')]",
+            "_connection-1": "[[variables('connection-1')]",
+            "workspace-location-inline": "[concat('[resourceGroup().locatio', 'n]')]",
+            "workspace-name": "[parameters('workspace')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/connections",
+              "apiVersion": "2016-06-01",
+              "name": "[[variables('SentinelConnectionName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "kind": "V1",
+              "properties": {
+                "displayName": "[[variables('SentinelConnectionName')]",
+                "api": {
+                  "id": "[[variables('_connection-1')]"
+                },
+                "parameterValueType": "Alternative"
+              }
+            },
+            {
+              "type": "Microsoft.Logic/workflows",
+              "apiVersion": "2019-05-01",
+              "name": "[[parameters('PlaybookName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "dependsOn": [
+                "[[resourceId('Microsoft.Web/connections', variables('SentinelConnectionName'))]"
+              ],
+              "properties": {
+                "state": "Enabled",
+                "definition": {
+                  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                  "contentVersion": "1.0.0.0",
+                  "parameters": {
+                    "$connections": {
+                      "type": "Object"
+                    },
+                    "SOCRadarAPIKey": {
+                      "type": "SecureString"
+                    },
+                    "SOCRadarIoCAPIKey": {
+                      "type": "SecureString"
+                    },
+                    "CompanyId": {
+                      "type": "String"
+                    },
+                    "RiskScoreThreshold": {
+                      "type": "Int"
+                    },
+                    "MaxIndicators": {
+                      "type": "Int"
+                    }
+                  },
+                  "triggers": {
+                    "Microsoft_Sentinel_incident": {
+                      "type": "ApiConnectionWebhook",
+                      "inputs": {
+                        "host": {
+                          "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                          }
+                        },
+                        "body": {
+                          "callback_url": "@{listCallbackUrl()}"
+                        },
+                        "path": "/incident-creation"
+                      }
+                    }
+                  },
+                  "actions": {
+                    "Init_Pending": {
+                      "type": "InitializeVariable",
+                      "inputs": {
+                        "variables": [
+                          {
+                            "name": "PendingIndicators",
+                            "type": "array",
+                            "value": "[variables('TemplateEmptyArray')]"
+                          }
+                        ]
+                      }
+                    },
+                    "Init_Failed": {
+                      "type": "InitializeVariable",
+                      "inputs": {
+                        "variables": [
+                          {
+                            "name": "FailedIndicators",
+                            "type": "array",
+                            "value": "[variables('TemplateEmptyArray')]"
+                          }
+                        ]
+                      },
+                      "runAfter": {
+                        "Init_Pending": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Extract_Alarm_Id": {
+                      "type": "Compose",
+                      "inputs": "@if(contains(coalesce(triggerBody()?['object']?['properties']?['title'], ''), '#'), first(split(last(split(coalesce(triggerBody()?['object']?['properties']?['title'], ''), '#')), ' ')), '')",
+                      "runAfter": {
+                        "Init_Failed": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Get_SOCRadar_Alarm_Entities": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "not": {
+                              "equals": [
+                                "@outputs('Extract_Alarm_Id')",
+                                ""
+                              ]
+                            }
+                          },
+                          {
+                            "not": {
+                              "equals": [
+                                "@parameters('CompanyId')",
+                                ""
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Fetch_Alarm": {
+                          "type": "Http",
+                          "inputs": {
+                            "method": "GET",
+                            "uri": "https://platform.socradar.com/api/company/@{parameters('CompanyId')}/incidents/v4",
+                            "queries": {
+                              "alarm_ids": "@{outputs('Extract_Alarm_Id')}"
+                            },
+                            "headers": {
+                              "API-Key": "@{parameters('SOCRadarAPIKey')}"
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 2,
+                              "interval": "PT10S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runtimeConfiguration": {
+                            "secureData": {
+                              "properties": [
+                                "inputs"
+                              ]
+                            }
+                          }
+                        },
+                        "Map_Alarm_Entities": {
+                          "type": "Select",
+                          "inputs": {
+                            "from": "@coalesce(first(body('Fetch_Alarm')?['data'])?['alarm_related_entities'], json('[]'))",
+                            "select": {
+                              "properties": {
+                                "address": "@if(equals(toLower(coalesce(item()?['key'], '')), 'ip'), item()?['value'], null)",
+                                "domainName": "@if(or(equals(toLower(coalesce(item()?['key'], '')), 'domain'), equals(toLower(coalesce(item()?['key'], '')), 'hostname')), item()?['value'], null)",
+                                "url": "@if(equals(toLower(coalesce(item()?['key'], '')), 'url'), item()?['value'], null)",
+                                "hashValue": "@if(equals(toLower(coalesce(item()?['key'], '')), 'hash'), item()?['value'], null)"
+                              }
+                            }
+                          },
+                          "runAfter": {
+                            "Fetch_Alarm": [
+                              "Succeeded",
+                              "Failed",
+                              "TimedOut"
+                            ]
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "Extract_Alarm_Id": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Build_Entity_List": {
+                      "type": "Compose",
+                      "inputs": "@take(union(coalesce(triggerBody()?['object']?['properties']?['relatedEntities'], json('[]')), coalesce(body('Map_Alarm_Entities'), json('[]'))), parameters('MaxIndicators'))",
+                      "runAfter": {
+                        "Get_SOCRadar_Alarm_Entities": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "For_Each_Entity": {
+                      "type": "Foreach",
+                      "foreach": "@outputs('Build_Entity_List')",
+                      "runtimeConfiguration": {
+                        "concurrency": {
+                          "repetitions": 1
+                        }
+                      },
+                      "actions": {
+                        "Get_Indicator_Value": {
+                          "type": "Compose",
+                          "inputs": "@coalesce(items('For_Each_Entity')?['properties']?['address'], items('For_Each_Entity')?['properties']?['domainName'], items('For_Each_Entity')?['properties']?['url'], items('For_Each_Entity')?['properties']?['hashValue'], '')"
+                        },
+                        "If_Indicator_Present": {
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "not": {
+                                  "equals": [
+                                    "@outputs('Get_Indicator_Value')",
+                                    ""
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Enrich_IOC": {
+                              "type": "Http",
+                              "inputs": {
+                                "method": "POST",
+                                "uri": "https://platform.socradar.com/api/ioc_enrichment/get/indicator_details",
+                                "headers": {
+                                  "API-Key": "@{parameters('SOCRadarIoCAPIKey')}",
+                                  "Content-Type": "application/json"
+                                },
+                                "body": {
+                                  "indicator": "@{outputs('Get_Indicator_Value')}",
+                                  "fields": [
+                                    "indicator_details"
+                                  ]
+                                },
+                                "retryPolicy": {
+                                  "type": "exponential",
+                                  "count": 3,
+                                  "interval": "PT10S",
+                                  "maximumInterval": "PT2M"
+                                }
+                              },
+                              "runtimeConfiguration": {
+                                "secureData": {
+                                  "properties": [
+                                    "inputs"
+                                  ]
+                                }
+                              }
+                            },
+                            "Handle_Response": {
+                              "type": "Switch",
+                              "expression": "@string(coalesce(outputs('Enrich_IOC')?['statusCode'], 0))",
+                              "runAfter": {
+                                "Enrich_IOC": [
+                                  "Succeeded",
+                                  "Failed",
+                                  "TimedOut"
+                                ]
+                              },
+                              "cases": {
+                                "Enriched_200": {
+                                  "case": "200",
+                                  "actions": {
+                                    "Select_ThreatActor_Names": {
+                                      "type": "Select",
+                                      "inputs": {
+                                        "from": "@coalesce(body('Enrich_IOC')?['top_classifications']?['threat_actors'], json('[]'))",
+                                        "select": "@item()?['name']"
+                                      }
+                                    },
+                                    "Select_Malware_Names": {
+                                      "type": "Select",
+                                      "inputs": {
+                                        "from": "@coalesce(body('Enrich_IOC')?['top_classifications']?['malwares'], json('[]'))",
+                                        "select": "@item()?['name']"
+                                      }
+                                    },
+                                    "If_Has_Signal": {
+                                      "type": "If",
+                                      "expression": {
+                                        "and": [
+                                          {
+                                            "greaterOrEquals": [
+                                              "@coalesce(first(body('Enrich_IOC')?['details']?['score']), 0)",
+                                              "@parameters('RiskScoreThreshold')"
+                                            ]
+                                          },
+                                          {
+                                            "not": {
+                                              "and": [
+                                                {
+                                                  "equals": [
+                                                    "@coalesce(body('Enrich_IOC')?['details']?['is_whitelisted'], false)",
+                                                    true
+                                                  ]
+                                                },
+                                                {
+                                                  "equals": [
+                                                    "@coalesce(first(body('Enrich_IOC')?['details']?['score']), 0)",
+                                                    0
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "actions": {
+                                        "Add_Comment_to_Incident": {
+                                          "type": "ApiConnection",
+                                          "inputs": {
+                                            "host": {
+                                              "connection": {
+                                                "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                              }
+                                            },
+                                            "method": "post",
+                                            "path": "/Incidents/Comment",
+                                            "body": {
+                                              "incidentArmId": "@triggerBody()?['object']?['id']",
+                                              "message": "<h3>SOCRadar IOC Enrichment</h3><b>Indicator:</b> @{replace(replace(replace(coalesce(body('Enrich_IOC')?['details']?['name'], outputs('Get_Indicator_Value')), '&', '&amp;'), '<', '&lt;'), '>', '&gt;')} (@{coalesce(body('Enrich_IOC')?['details']?['object_type'], 'unknown')})<br><b>Risk Score:</b> @{coalesce(first(body('Enrich_IOC')?['details']?['score']), 0)} / 100<br><b>Signal Strength:</b> @{if(empty(string(body('Enrich_IOC')?['details']?['ioc_signal_strength'])), 'N/A', string(body('Enrich_IOC')?['details']?['ioc_signal_strength']))}<br><b>Whitelisted:</b> @{coalesce(body('Enrich_IOC')?['details']?['is_whitelisted'], false)}<br><b>Categories:</b> malware=@{coalesce(body('Enrich_IOC')?['categorization']?['malware'], false)}, threat_actor=@{coalesce(body('Enrich_IOC')?['categorization']?['threat_actor'], false)}, tor=@{coalesce(body('Enrich_IOC')?['categorization']?['tor'], false)}, vpn=@{coalesce(body('Enrich_IOC')?['categorization']?['vpn'], false)}, proxy=@{coalesce(body('Enrich_IOC')?['categorization']?['proxy'], false)}, scanner=@{coalesce(body('Enrich_IOC')?['categorization']?['scanner'], false)}<br><b>Threat Actors:</b> @{if(empty(body('Select_ThreatActor_Names')), 'None', join(body('Select_ThreatActor_Names'), ', '))}<br><b>Malware:</b> @{if(empty(body('Select_Malware_Names')), 'None', join(body('Select_Malware_Names'), ', '))}<br><b>Campaign:</b> @{if(empty(string(body('Enrich_IOC')?['top_classifications']?['campaign'])), 'N/A', string(body('Enrich_IOC')?['top_classifications']?['campaign']))}<br><b>Geo / ASN:</b> @{coalesce(body('Enrich_IOC')?['details']?['extra_info']?['city_name'], 'N/A')}, @{coalesce(body('Enrich_IOC')?['details']?['extra_info']?['region_name'], 'N/A')} (@{coalesce(body('Enrich_IOC')?['details']?['extra_info']?['asn_name'], 'N/A')})<br><b>Feed Sources:</b> @{length(coalesce(body('Enrich_IOC')?['details']?['feed_source_list'], json('[]')))}<br><b>VirusTotal:</b> @{coalesce(body('Enrich_IOC')?['details']?['vt_link'], 'N/A')}<br><i>Powered by SOCRadar IOC Enrichment</i>"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "runAfter": {
+                                        "Select_ThreatActor_Names": [
+                                          "Succeeded"
+                                        ],
+                                        "Select_Malware_Names": [
+                                          "Succeeded"
+                                        ]
+                                      }
+                                    }
+                                  }
+                                },
+                                "Pending_202": {
+                                  "case": "202",
+                                  "actions": {
+                                    "Collect_Pending": {
+                                      "type": "AppendToArrayVariable",
+                                      "inputs": {
+                                        "name": "PendingIndicators",
+                                        "value": "@outputs('Get_Indicator_Value')"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "default": {
+                                "actions": {
+                                  "Collect_Failed": {
+                                    "type": "AppendToArrayVariable",
+                                    "inputs": {
+                                      "name": "FailedIndicators",
+                                      "value": "@concat(outputs('Get_Indicator_Value'), ' (HTTP ', string(coalesce(outputs('Enrich_IOC')?['statusCode'], 0)), ')')"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "runAfter": {
+                            "Get_Indicator_Value": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "Build_Entity_List": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Check_Followups": {
+                      "type": "If",
+                      "expression": {
+                        "or": [
+                          {
+                            "greater": [
+                              "@length(variables('PendingIndicators'))",
+                              0
+                            ]
+                          },
+                          {
+                            "greater": [
+                              "@length(variables('FailedIndicators'))",
+                              0
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Add_Summary_Comment": {
+                          "type": "ApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connection": {
+                                "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                              }
+                            },
+                            "method": "post",
+                            "path": "/Incidents/Comment",
+                            "body": {
+                              "incidentArmId": "@triggerBody()?['object']?['id']",
+                              "message": "<h3>SOCRadar IOC Enrichment - summary</h3><b>Indicators submitted:</b> @{length(outputs('Build_Entity_List'))}<br><b>Awaiting first lookup:</b> @{length(variables('PendingIndicators'))}@{if(greater(length(variables('PendingIndicators')), 0), concat(' - ', join(variables('PendingIndicators'), ', ')), '')}<br><b>Not enriched:</b> @{length(variables('FailedIndicators'))}@{if(greater(length(variables('FailedIndicators')), 0), concat(' - ', join(variables('FailedIndicators'), ', ')), '')}<br>Re-run this playbook later to enrich the pending indicators.<br><i>Powered by SOCRadar IOC Enrichment</i>"
+                            }
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "For_Each_Entity": [
+                          "Succeeded",
+                          "Failed"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "parameters": {
+                  "$connections": {
+                    "value": {
+                      "azuresentinel": {
+                        "connectionId": "[[resourceId('Microsoft.Web/connections', variables('SentinelConnectionName'))]",
+                        "connectionName": "[[variables('SentinelConnectionName')]",
+                        "connectionProperties": {
+                          "authentication": {
+                            "type": "ManagedServiceIdentity"
+                          }
+                        },
+                        "id": "[[subscriptionResourceId('Microsoft.Web/locations/managedApis', variables('workspace-location-inline'), 'azuresentinel')]"
+                      }
+                    }
+                  },
+                  "SOCRadarAPIKey": {
+                    "value": "[[parameters('SOCRadarAPIKey')]"
+                  },
+                  "SOCRadarIoCAPIKey": {
+                    "value": "[[if(empty(parameters('SOCRadarIoCAPIKey')), parameters('SOCRadarAPIKey'), parameters('SOCRadarIoCAPIKey'))]"
+                  },
+                  "CompanyId": {
+                    "value": "[[parameters('CompanyId')]"
+                  },
+                  "RiskScoreThreshold": {
+                    "value": "[[parameters('RiskScoreThreshold')]"
+                  },
+                  "MaxIndicators": {
+                    "value": "[[parameters('MaxIndicators')]"
+                  }
+                }
+              },
+              "tags": {
+                "hidden-SentinelWorkspaceId": "[[variables('workspaceResourceId')]"
+              }
+            },
+            {
+              "condition": "[[not(empty(parameters('SentinelServicePrincipalObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceGroup().id, parameters('PlaybookName'), variables('SentinelAutomationContributorRoleId'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Logic/workflows', parameters('PlaybookName'))]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('SentinelAutomationContributorRoleId'))]",
+                "principalId": "[[parameters('SentinelServicePrincipalObjectId')]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "condition": "[[not(variables('isExternalWorkspace'))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(variables('workspaceResourceId'), parameters('PlaybookName'), variables('sentinelRoleDefinitionId'))]",
+              "scope": "[[variables('workspaceResourceId')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Logic/workflows', parameters('PlaybookName'))]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('sentinelRoleDefinitionId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.Logic/workflows', parameters('PlaybookName')), '2019-05-01', 'Full').identity.principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "condition": "[[variables('isExternalWorkspace')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2021-04-01",
+              "name": "deploy-ioc-enrichment-roles",
+              "resourceGroup": "[[parameters('WorkspaceResourceGroup')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Logic/workflows', parameters('PlaybookName'))]"
+              ],
+              "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                  "scope": "outer"
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "resources": [
+                    {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "name": "[[guid(variables('workspaceResourceId'), parameters('PlaybookName'), variables('sentinelRoleDefinitionId'))]",
+                      "scope": "[[variables('workspaceResourceId')]",
+                      "properties": {
+                        "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('sentinelRoleDefinitionId'))]",
+                        "principalId": "[[reference(resourceId('Microsoft.Logic/workflows', parameters('PlaybookName')), '2019-05-01', 'Full').identity.principalId]",
+                        "principalType": "ServicePrincipal"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('Playbook-', last(split(variables('playbookId3'),'/'))))]",
+              "properties": {
+                "parentId": "[variables('playbookId3')]",
+                "contentId": "[variables('_playbookContentId3')]",
+                "kind": "Playbook",
+                "version": "[variables('playbookVersion3')]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadar",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://github.com/Radargoger/azure-one-click-documentations/blob/main/azureincidents.md"
+                }
+              }
+            }
+          ],
+          "metadata": {
+            "title": "SOCRadar-IOC-Enrichment",
+            "description": "Enriches Microsoft Sentinel incident entities (IP, domain, URL, file hash) with SOCRadar IOC Enrichment intelligence (risk score, signal strength, categorization, threat actors). Triggers on incident creation, queries the SOCRadar indicator_details API, and posts an enrichment comment to the incident. For SOCRadar-Alarm-Import incidents that carry no Microsoft Sentinel entities, it fetches the original alarm's related entities from SOCRadar by alarm id. Handles not-found (404), async (202), and benign indicators gracefully.",
+            "version": "1.0.0",
+            "lastUpdateTime": "2026-09-14T00:00:00Z",
+            "releaseNotes": {
+              "version": "1.0",
+              "title": "[variables('blanks')]",
+              "notes": [
+                "Initial version"
+              ]
+            }
+          }
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('_playbookContentId3')]",
+        "contentKind": "Playbook",
+        "displayName": "SOCRadar-IOC-Enrichment",
+        "contentProductId": "[variables('_playbookcontentProductId3')]",
+        "id": "[variables('_playbookcontentProductId3')]",
+        "version": "[variables('playbookVersion3')]"
       }
     }
   ],

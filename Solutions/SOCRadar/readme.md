@@ -97,6 +97,7 @@ Install the SOCRadar solution from the Microsoft Sentinel **Content Hub**, then 
 3. Go to **Configuration** &gt; **Automation** &gt; **Playbook templates**
 4. Create the **SOCRadar-Alarm-Import** playbook. Deploying this playbook provisions all of its Log Analytics infrastructure — Data Collection Endpoint, custom tables (`SOCRadar_Alarms_CL`, `SOCRadarAuditLog_CL`), Data Collection Rules, and the required role assignments for the Logic App Managed Identity — along with the alarm import Logic App itself.
 5. (Optional) Create the **SOCRadar-Alarm-Sync** playbook for bidirectional sync back to SOCRadar.
+6. (Optional) Create the **SOCRadar-IOC-Enrichment** playbook, then add an automation rule (incident created -> run playbook). It needs a SOCRadar API key with the IOC Enrichment entitlement.
 
 Logic Apps start 3 minutes after deployment to allow Azure role propagation.
 
@@ -106,8 +107,9 @@ Logic Apps start 3 minutes after deployment to allow Azure role propagation.
 |----------|-------------|
 | [SOCRadar-Alarm-Import](Playbooks/SOCRadar-Alarm-Import) | Imports SOCRadar alarms as Microsoft Sentinel incidents, directly or through a scheduled analytics rule (`IncidentMode`). Provisions the DCE, custom log tables, and DCRs required by this solution. |
 | [SOCRadar-Alarm-Sync](Playbooks/SOCRadar-Alarm-Sync) | Syncs closed Microsoft Sentinel incidents back to SOCRadar with classification mapping. |
+| [SOCRadar-IOC-Enrichment](Playbooks/SOCRadar-IOC-Enrichment) | Enriches the entities of new incidents (IP, domain, URL, file hash) with SOCRadar IOC Enrichment and posts the result as an incident comment. Runs from an automation rule. |
 
-Both playbooks use Managed Identity for authentication.
+All playbooks use Managed Identity for authentication.
 
 ## About SOCRadar
 

@@ -6,7 +6,7 @@
   "WorkbookBladeDescription": "This solution installs a workbook to visualize SOCRadar alarm data imported into Microsoft Sentinel.",
   "HuntingQueryBladeDescription": "This solution installs hunting queries to help investigate SOCRadar alarm data in Microsoft Sentinel.",
   "AnalyticalRuleBladeDescription": "This solution installs analytic rule templates to detect critical SOCRadar alarms, alarm volume anomalies, and sync failures.",
-  "PlaybooksBladeDescription": "This solution installs playbooks to automate alarm import and sync between SOCRadar and Microsoft Sentinel.",
+  "PlaybooksBladeDescription": "This solution installs playbooks to automate alarm import and sync between SOCRadar and Microsoft Sentinel, and to enrich incident entities with SOCRadar IOC Enrichment.",
   "Version": "3.0.2",
   "BasePath": "C:\\\\GitHub\\\\Azure-Sentinel\\\\Solutions\\\\SOCRadar",
   "TemplateSpec": true,
@@ -32,10 +32,12 @@
   ],
   "Playbooks": [
     "Playbooks/SOCRadar-Alarm-Import/azuredeploy.json",
-    "Playbooks/SOCRadar-Alarm-Sync/azuredeploy.json"
+    "Playbooks/SOCRadar-Alarm-Sync/azuredeploy.json",
+    "Playbooks/SOCRadar-IOC-Enrichment/azuredeploy.json"
   ],
   "PlaybookDescription": [
     "Imports SOCRadar alarms as Microsoft Sentinel incidents with deduplication and pagination. Provisions the Data Collection Endpoint, custom log tables (SOCRadar_Alarms_CL and SOCRadarAuditLog_CL) and Data Collection Rules required for alarm storage and audit logging.",
-    "Syncs closed Microsoft Sentinel incidents back to SOCRadar with classification mapping."
+    "Syncs closed Microsoft Sentinel incidents back to SOCRadar with classification mapping.",
+    "Enriches the entities of new Microsoft Sentinel incidents (IP, domain, URL, file hash) with SOCRadar IOC Enrichment intelligence and posts the risk score, categorization and threat actors as an incident comment. Requires a SOCRadar API key with the IOC Enrichment entitlement."
   ]
 }
