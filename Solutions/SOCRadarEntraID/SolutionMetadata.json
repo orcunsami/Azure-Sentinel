@@ -1,0 +1,16 @@
+{
+  "publisherId": "socradar",
+  "offerId": "azure-sentinel-solution-socradar-entraid",
+  "firstPublishDate": "2026-05-11",
+  "providers": ["SOCRadar"],
+  "categories": {
+    "domains": ["Identity", "Security - Threat Protection"],
+    "verticals": []
+  },
+  "support": {
+    "name": "SOCRadar",
+    "email": "integration@socradar.io",
+    "tier": "Partner",
+    "link": "https://github.com/orcunsami/SOCRadar-Azure-Entra-ID/blob/master/README.md"
+  }
+}
