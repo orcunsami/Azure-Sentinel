@@ -18,6 +18,7 @@ entityMappings:
         columnName: Status
 query: |
   SecurityIncident
+  | summarize arg_max(TimeGenerated, *) by IncidentNumber
   | where Labels has "SOCRadar"
   | summarize Count=count() by Status, Classification
   | order by Count desc

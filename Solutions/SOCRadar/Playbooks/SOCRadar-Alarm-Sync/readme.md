@@ -4,10 +4,11 @@ Syncs closed Microsoft Sentinel incidents back to SOCRadar with classification m
 
 ## Features
 
-- Monitors recently closed SOCRadar-tagged incidents
+- Looks at SOCRadar-tagged incidents closed in the last 24 hours that have no Synced tag yet, so a closure whose write failed is retried on every run
+- If a page of the closed-incidents query fails, the run ends Failed (`SyncIncomplete`) and the next run starts over
 - Maps Microsoft Sentinel classification to SOCRadar status
 - Synced tag prevents duplicate sync operations
-- Configurable polling interval
+- Configurable polling interval (the lookback is fixed at 24 hours)
 
 ## Classification Mapping
 

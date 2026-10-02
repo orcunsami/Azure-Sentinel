@@ -18,6 +18,6 @@ entityMappings:
         columnName: AlarmMainType
 query: |
   SOCRadar_Alarms_CL
-  | summarize Count=count() by AlarmMainType, Severity
+  | summarize Count=dcount(AlarmId) by AlarmMainType, Severity
   | order by Count desc
-version: 1.0.0
+version: 1.0.1

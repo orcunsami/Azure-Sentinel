@@ -71,9 +71,10 @@ flowchart LR
 - Severity and status mapping
 - Tags for categorization (SOCRadar, alarm type, sub type)
 - Optional closed alarm import with classification
+- Incident mode: `Direct` creates incidents through the Microsoft Sentinel API; `AlertBacked` writes each alarm to `SOCRadar_Alarms_CL` and deploys a scheduled analytics rule that raises the incident, so it also appears in the Microsoft Defender portal's incident queue. In that mode the **SOCRadar High or Critical Severity Alarm** analytics rule template is redundant (every open alarm already raises an incident); leave it disabled. Verified against a workspace that is not connected to Microsoft Defender XDR; on a connected workspace Sync still resolves the alarm from the incident's URL entity, but the severity line in the description may be absent. Each alarm is written once and the incident is Microsoft Sentinel's to create; if the platform skips a rule run, those alarms are not re-alerted (`Direct` has no such dependency)
 
 **Bidirectional Sync**
-- Closed incidents in Microsoft Sentinel update alarm status in SOCRadar
+- Closed incidents in Microsoft Sentinel update alarm status in SOCRadar; closed incidents without the Synced tag are retried for 24 hours
 - Classification mapping: TruePositive to Resolved, FalsePositive to False Positive, BenignPositive to Mitigated
 
 **Analytics**
@@ -96,6 +97,7 @@ Install the SOCRadar solution from the Microsoft Sentinel **Content Hub**, then 
 3. Go to **Configuration** &gt; **Automation** &gt; **Playbook templates**
 4. Create the **SOCRadar-Alarm-Import** playbook. Deploying this playbook provisions all of its Log Analytics infrastructure — Data Collection Endpoint, custom tables (`SOCRadar_Alarms_CL`, `SOCRadarAuditLog_CL`), Data Collection Rules, and the required role assignments for the Logic App Managed Identity — along with the alarm import Logic App itself.
 5. (Optional) Create the **SOCRadar-Alarm-Sync** playbook for bidirectional sync back to SOCRadar.
+6. (Optional) Create the **SOCRadar-IOC-Enrichment** playbook, then add an automation rule (incident created -> run playbook). It needs a SOCRadar API key with the IOC Enrichment entitlement.
 
 Logic Apps start 3 minutes after deployment to allow Azure role propagation.
 
@@ -103,10 +105,11 @@ Logic Apps start 3 minutes after deployment to allow Azure role propagation.
 
 | Playbook | Description |
 |----------|-------------|
-| [SOCRadar-Alarm-Import](Playbooks/SOCRadar-Alarm-Import) | Imports SOCRadar alarms as Microsoft Sentinel incidents. Provisions the DCE, custom log tables, and DCRs required by this solution. |
+| [SOCRadar-Alarm-Import](Playbooks/SOCRadar-Alarm-Import) | Imports SOCRadar alarms as Microsoft Sentinel incidents, directly or through a scheduled analytics rule (`IncidentMode`). Provisions the DCE, custom log tables, and DCRs required by this solution. |
 | [SOCRadar-Alarm-Sync](Playbooks/SOCRadar-Alarm-Sync) | Syncs closed Microsoft Sentinel incidents back to SOCRadar with classification mapping. |
+| [SOCRadar-IOC-Enrichment](Playbooks/SOCRadar-IOC-Enrichment) | Enriches the entities of new incidents (IP, domain, URL, file hash) with SOCRadar IOC Enrichment and posts the result as an incident comment. Runs from an automation rule. |
 
-Both playbooks use Managed Identity for authentication.
+All playbooks use Managed Identity for authentication.
 
 ## About SOCRadar
 
@@ -116,6 +119,5 @@ Learn more at [socradar.io](https://socradar.io)
 
 ## Support
 
-- **Public Documentation:** [Microsoft Sentinel Integration — One-Click Deployment Guide](https://github.com/Radargoger/azure-one-click-documentations/blob/main/azureincidents.md)
 - **Detailed Documentation (SOCRadar customers):** [Microsoft Azure Sentinel Integration (Bi-Directional)](https://help.socradar.io/hc/en-us/articles/41316851769745-Microsoft-Azure-Sentinel-Integration-Bi-Directional)
 - **Support:** integration@socradar.io
