@@ -1,0 +1,916 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "title": "SOCRadar-MSSP-Alarm-Sync",
+    "description": "Syncs closed MSSP incidents from Microsoft Sentinel back to the matching SOCRadar company. Uses the Synced label to prevent duplicate syncs. Filters by: SOCRadar label + Closed status + lastModified + the [MSSP- title prefix. Pages through 1000+ incidents.",
+    "version": "1.0.0",
+    "author": {
+      "name": "SOCRadar"
+    },
+    "lastUpdateTime": "2026-10-01T00:00:00.000Z",
+    "support": {
+      "tier": "Partner"
+    }
+  },
+  "parameters": {
+    "PlaybookName": {
+      "type": "string",
+      "defaultValue": "SOCRadar-MSSP-Alarm-Sync",
+      "metadata": {
+        "description": "Name of the Logic App"
+      }
+    },
+    "SOCRadarAPIKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SOCRadar API Key"
+      }
+    },
+    "WorkspaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Microsoft Sentinel Log Analytics Workspace Name"
+      }
+    },
+    "PollingIntervalMinutes": {
+      "type": "int",
+      "defaultValue": 5,
+      "minValue": 1,
+      "maxValue": 1440,
+      "metadata": {
+        "description": "Polling interval in minutes (1-1440)"
+      }
+    },
+    "triggerStartTime": {
+      "type": "string",
+      "defaultValue": "[dateTimeAdd(utcNow(), 'PT3M')]",
+      "metadata": {
+        "description": "The start time for the playbook trigger."
+      }
+    },
+    "_triggerStartTime": {
+      "type": "string",
+      "defaultValue": "[parameters('triggerStartTime')]",
+      "metadata": {
+        "description": "Trigger start time (3 min delay for role propagation)"
+      }
+    },
+    "WorkspaceResourceGroup": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of existing Microsoft Sentinel workspace. Leave default if workspace is in same RG."
+      }
+    },
+    "SentinelRoleLevel": {
+      "type": "string",
+      "defaultValue": "Responder",
+      "allowedValues": [
+        "Contributor",
+        "Responder"
+      ],
+      "metadata": {
+        "description": "Microsoft Sentinel role for Logic App. Responder sufficient for incident ops (least-privilege)."
+      }
+    },
+    "CompanyIds": {
+      "type": "string",
+      "metadata": {
+        "description": "Comma-separated SOCRadar Company IDs matching the Import playbook deployment."
+      }
+    },
+    "CompanyNames": {
+      "type": "string",
+      "metadata": {
+        "description": "Comma-separated company names matching CompanyIds positionally. Used to parse the [MSSP-<name>] title prefix of an incident back to company_id for the Sync API call."
+      }
+    },
+    "EnableAuditLogging": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Write sync events to the MSSP audit table. Requires the three Audit* values below, which the alarm-import deployment creates."
+      }
+    },
+    "AuditDcrEndpoint": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "logsIngestion endpoint of the Data Collection Endpoint created by the alarm-import deployment. Leave empty when audit logging is off."
+      }
+    },
+    "AuditDcrImmutableId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "immutableId of the audit Data Collection Rule created by the alarm-import deployment."
+      }
+    },
+    "AuditStreamName": {
+      "type": "string",
+      "defaultValue": "Custom-SOCRadar_MSSP_AuditLog_CL",
+      "metadata": {
+        "description": "Stream name declared by the audit Data Collection Rule."
+      }
+    },
+    "AuditDcrResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Full resource id of the audit Data Collection Rule. When set, this template grants the playbook's managed identity Monitoring Metrics Publisher on it so audit writes are not rejected with 403."
+      }
+    },
+    "SyncSeverity": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Push the Microsoft Sentinel incident severity back to SOCRadar when an incident is closed. Off by default: Microsoft Sentinel has no Critical severity, so a CRITICAL alarm imports as High and writing that back would silently downgrade the alarm on SOCRadar."
+      }
+    }
+  },
+  "variables": {
+    "SentinelConnectionName": "[concat('azuresentinel-', parameters('PlaybookName'))]",
+    "_SentinelContributorRoleGuid": "ab8e14d6-4a74-4a29-9ba8-549422addade",
+    "_SentinelResponderRoleGuid": "3e150937-b8fe-4cfb-8069-0eaf05ecd056",
+    "SentinelContributorRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('_SentinelContributorRoleGuid'))]",
+    "SentinelResponderRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('_SentinelResponderRoleGuid'))]",
+    "sentinelRoleDefinitionId": "[if(equals(parameters('SentinelRoleLevel'), 'Responder'), variables('SentinelResponderRoleId'), variables('SentinelContributorRoleId'))]",
+    "workspaceResourceId": "[resourceId(parameters('WorkspaceResourceGroup'), 'Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+    "_managementBaseUrl": "[environment().resourceManager]",
+    "MonitoringMetricsPublisherRoleId": "3913510d-42f4-4e42-8a64-420c390055eb"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/connections",
+      "apiVersion": "2016-06-01",
+      "name": "[variables('SentinelConnectionName')]",
+      "location": "[resourceGroup().location]",
+      "kind": "V1",
+      "properties": {
+        "displayName": "[variables('SentinelConnectionName')]",
+        "api": {
+          "id": "[subscriptionResourceId('Microsoft.Web/locations/managedApis', resourceGroup().location, 'azuresentinel')]"
+        },
+        "parameterValueType": "Alternative"
+      }
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[parameters('PlaybookName')]",
+      "location": "[resourceGroup().location]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/connections', variables('SentinelConnectionName'))]"
+      ],
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            },
+            "SOCRadarAPIKey": {
+              "type": "SecureString"
+            },
+            "CompanyIds": {
+              "type": "String"
+            },
+            "CompanyNames": {
+              "type": "String"
+            },
+            "WorkspaceName": {
+              "type": "String"
+            },
+            "PollingIntervalMinutes": {
+              "type": "Int"
+            },
+            "EnableAuditLogging": {
+              "type": "Bool",
+              "defaultValue": false
+            },
+            "AuditDcrEndpoint": {
+              "type": "String",
+              "defaultValue": ""
+            },
+            "AuditDcrImmutableId": {
+              "type": "String",
+              "defaultValue": ""
+            },
+            "AuditStreamName": {
+              "type": "String",
+              "defaultValue": "Custom-SOCRadar_MSSP_AuditLog_CL"
+            },
+            "ManagementBaseUrl": {
+              "type": "String",
+              "defaultValue": ""
+            },
+            "SyncSeverity": {
+              "type": "Bool",
+              "defaultValue": false
+            }
+          },
+          "triggers": {
+            "Recurrence": {
+              "type": "Recurrence",
+              "recurrence": {
+                "frequency": "Minute",
+                "interval": "[parameters('PollingIntervalMinutes')]",
+                "startTime": "[parameters('_triggerStartTime')]"
+              },
+              "operationOptions": "SingleInstance"
+            }
+          },
+          "actions": {
+            "Build_Company_Array": {
+              "type": "Select",
+              "inputs": {
+                "from": "@range(0, length(split(parameters('CompanyIds'), ',')))",
+                "select": {
+                  "CompanyId": "@trim(split(parameters('CompanyIds'), ',')[item()])",
+                  "CompanyName": "@replace(replace(replace(replace(replace(replace(replace(trim(split(parameters('CompanyNames'), ',')[item()]), '\\', ''), '\"', ''), '[', ''), ']', ''), '{', ''), '}', ''), '#', '')"
+                }
+              },
+              "runAfter": {
+                "Validate_Company_Arrays": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Calculate_Lookback_Time": {
+              "type": "Compose",
+              "inputs": "@addMinutes(utcNow(), mul(-2, parameters('PollingIntervalMinutes')))",
+              "runAfter": {
+                "Build_Company_Array": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Initialize_Closed_Incidents": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "closed_incidents",
+                    "type": "array",
+                    "value": []
+                  }
+                ]
+              },
+              "runAfter": {
+                "Calculate_Lookback_Time": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Initialize_Closed_NextLink": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "closed_next_link",
+                    "type": "string",
+                    "value": "[concat(variables('_managementBaseUrl'), 'subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('WorkspaceResourceGroup'), '/providers/Microsoft.OperationalInsights/workspaces/', parameters('WorkspaceName'), '/providers/Microsoft.SecurityInsights/incidents?api-version=2023-11-01&$top=1000&$filter=properties/labels/any(label: label/labelName eq ''SOCRadar'') and properties/status eq ''Closed'' and properties/lastModifiedTimeUtc ge @{outputs(''Calculate_Lookback_Time'')} and startswith(properties/title, ''[MSSP-'')')]"
+                  }
+                ]
+              },
+              "runAfter": {
+                "Initialize_Closed_Incidents": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Pagination_Loop_Closed": {
+              "type": "Until",
+              "expression": "@equals(variables('closed_next_link'), '')",
+              "limit": {
+                "count": 100,
+                "timeout": "PT10M"
+              },
+              "actions": {
+                "Query_Closed_Page": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "GET",
+                    "uri": "@variables('closed_next_link')",
+                    "authentication": {
+                      "type": "ManagedServiceIdentity"
+                    },
+                    "retryPolicy": {
+                      "type": "exponential",
+                      "count": 4,
+                      "interval": "PT10S",
+                      "maximumInterval": "PT1M"
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Compose_New_Closed": {
+                  "type": "Compose",
+                  "inputs": "@union(variables('closed_incidents'), coalesce(body('Query_Closed_Page')?['value'], json('[]')))",
+                  "runAfter": {
+                    "Query_Closed_Page": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Set_Closed_Incidents": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "closed_incidents",
+                    "value": "@outputs('Compose_New_Closed')"
+                  },
+                  "runAfter": {
+                    "Compose_New_Closed": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Set_Closed_NextLink": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "closed_next_link",
+                    "value": "@coalesce(body('Query_Closed_Page')?['nextLink'], '')"
+                  },
+                  "runAfter": {
+                    "Set_Closed_Incidents": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Initialize_Closed_NextLink": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "For_Each_Incident": {
+              "type": "Foreach",
+              "foreach": "@variables('closed_incidents')",
+              "runtimeConfiguration": {
+                "concurrency": {
+                  "repetitions": 5
+                }
+              },
+              "actions": {
+                "Extract_Alarm_ID": {
+                  "type": "Compose",
+                  "inputs": "@if(contains(coalesce(items('For_Each_Incident')?['properties']?['title'], ''), '#'), split(split(items('For_Each_Incident')?['properties']?['title'], '#')[1], ' ')[0], '')",
+                  "runAfter": {}
+                },
+                "Extract_Company_Name": {
+                  "type": "Compose",
+                  "inputs": "@if(contains(coalesce(items('For_Each_Incident')?['properties']?['title'], ''), '[MSSP-'), split(split(items('For_Each_Incident')?['properties']?['title'], '[MSSP-')[1], ']')[0], '')",
+                  "runAfter": {
+                    "Extract_Alarm_ID": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Filter_Company_Config": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@body('Build_Company_Array')",
+                    "where": "@equals(item()?['CompanyName'], outputs('Extract_Company_Name'))"
+                  },
+                  "runAfter": {
+                    "Extract_Company_Name": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Check_Has_Synced_Tag": {
+                  "type": "Compose",
+                  "inputs": "@contains(string(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]'))), 'Synced')",
+                  "runAfter": {
+                    "Filter_Company_Config": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Check_If_Should_Sync": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@items('For_Each_Incident')?['properties']?['status']",
+                          "Closed"
+                        ]
+                      },
+                      {
+                        "equals": [
+                          "@outputs('Check_Has_Synced_Tag')",
+                          false
+                        ]
+                      },
+                      {
+                        "greater": [
+                          "@length(body('Filter_Company_Config'))",
+                          0
+                        ]
+                      },
+                      {
+                        "not": {
+                          "equals": [
+                            "@outputs('Extract_Alarm_ID')",
+                            ""
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Update_SOCRadar_Status": {
+                      "type": "Http",
+                      "inputs": {
+                        "method": "POST",
+                        "uri": "https://platform.socradar.com/api/company/@{first(body('Filter_Company_Config'))?['CompanyId']}/alarms/status/change",
+                        "headers": {
+                          "API-Key": "@{parameters('SOCRadarAPIKey')}",
+                          "Content-Type": "application/json"
+                        },
+                        "body": {
+                          "alarm_ids": "@createArray(int(outputs('Extract_Alarm_ID')))",
+                          "status": "@{if(equals(items('For_Each_Incident')?['properties']?['classification'], 'FalsePositive'), 9, if(equals(items('For_Each_Incident')?['properties']?['classification'], 'BenignPositive'), 12, 2))}",
+                          "comments": "Closed in Microsoft Sentinel (Classification: @{coalesce(items('For_Each_Incident')?['properties']?['classification'], 'Unclassified')})"
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT10S",
+                          "maximumInterval": "PT1M"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "secureData": {
+                          "properties": [
+                            "inputs"
+                          ]
+                        }
+                      },
+                      "runAfter": {}
+                    },
+                    "Check_SOCRadar_Write_Succeeded": {
+                      "type": "If",
+                      "expression": {
+                        "or": [
+                          {
+                            "equals": [
+                              "@coalesce(body('Update_SOCRadar_Status')?['is_success'], false)",
+                              true
+                            ]
+                          },
+                          {
+                            "contains": [
+                              "@toLower(string(coalesce(body('Update_SOCRadar_Status')?['message'], '')))",
+                              "already"
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Add_Synced_Tag": {
+                          "type": "Http",
+                          "inputs": {
+                            "method": "PUT",
+                            "uri": "[concat(variables('_managementBaseUrl'), 'subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('WorkspaceResourceGroup'), '/providers/Microsoft.OperationalInsights/workspaces/', parameters('WorkspaceName'), '/providers/Microsoft.SecurityInsights/incidents/@{items(''For_Each_Incident'')?[''name'']}?api-version=2023-11-01')]",
+                            "authentication": {
+                              "type": "ManagedServiceIdentity"
+                            },
+                            "headers": {
+                              "Content-Type": "application/json"
+                            },
+                            "body": {
+                              "etag": "@{items('For_Each_Incident')?['etag']}",
+                              "properties": {
+                                "title": "@{items('For_Each_Incident')?['properties']?['title']}",
+                                "description": "@{items('For_Each_Incident')?['properties']?['description']}",
+                                "status": "@{items('For_Each_Incident')?['properties']?['status']}",
+                                "severity": "@{items('For_Each_Incident')?['properties']?['severity']}",
+                                "classification": "@{items('For_Each_Incident')?['properties']?['classification']}",
+                                "classificationReason": "@{items('For_Each_Incident')?['properties']?['classificationReason']}",
+                                "classificationComment": "@{items('For_Each_Incident')?['properties']?['classificationComment']}",
+                                "owner": "@items('For_Each_Incident')?['properties']?['owner']",
+                                "firstActivityTimeUtc": "@{items('For_Each_Incident')?['properties']?['firstActivityTimeUtc']}",
+                                "lastActivityTimeUtc": "@{items('For_Each_Incident')?['properties']?['lastActivityTimeUtc']}",
+                                "labels": "@union(coalesce(items('For_Each_Incident')?['properties']?['labels'], json('[]')), json('[{\"labelName\": \"Synced\", \"labelType\": \"User\"}]'))"
+                              }
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 4,
+                              "interval": "PT10S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runAfter": {}
+                        },
+                        "Check_Sync_Audit": {
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "equals": [
+                                  "@parameters('EnableAuditLogging')",
+                                  true
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Log_Sync_Event": {
+                              "type": "Http",
+                              "inputs": {
+                                "method": "POST",
+                                "uri": "@{concat(parameters('AuditDcrEndpoint'), '/dataCollectionRules/', parameters('AuditDcrImmutableId'), '/streams/', parameters('AuditStreamName'), '?api-version=2023-01-01')}",
+                                "headers": {
+                                  "Content-Type": "application/json"
+                                },
+                                "authentication": {
+                                  "type": "ManagedServiceIdentity",
+                                  "audience": "https://monitor.azure.com"
+                                },
+                                "body": [
+                                  {
+                                    "TimeGenerated": "@{utcNow()}",
+                                    "EventType": "IncidentSynced",
+                                    "AlarmId": "@{outputs('Extract_Alarm_ID')}",
+                                    "IncidentId": "@{items('For_Each_Incident')?['properties']?['incidentNumber']}",
+                                    "AlarmType": "",
+                                    "Status": "@{coalesce(items('For_Each_Incident')?['properties']?['classification'], 'Unclassified')}",
+                                    "Severity": "@{coalesce(items('For_Each_Incident')?['properties']?['severity'], 'Medium')}",
+                                    "Message": "@{concat('Incident synced: classification=', coalesce(items('For_Each_Incident')?['properties']?['classification'], 'Unknown'))}",
+                                    "FullAlarmJson": "",
+                                    "company_name": "@{first(body('Filter_Company_Config'))?['CompanyName']}"
+                                  }
+                                ]
+                              },
+                              "runAfter": {}
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          },
+                          "runAfter": {
+                            "Add_Synced_Tag": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Check_Sync_Rejected_Audit": {
+                            "type": "If",
+                            "expression": {
+                              "and": [
+                                {
+                                  "equals": [
+                                    "@parameters('EnableAuditLogging')",
+                                    true
+                                  ]
+                                }
+                              ]
+                            },
+                            "actions": {
+                              "Log_Sync_Rejected": {
+                                "type": "Http",
+                                "inputs": {
+                                  "method": "POST",
+                                  "uri": "@{concat(parameters('AuditDcrEndpoint'), '/dataCollectionRules/', parameters('AuditDcrImmutableId'), '/streams/', parameters('AuditStreamName'), '?api-version=2023-01-01')}",
+                                  "headers": {
+                                    "Content-Type": "application/json"
+                                  },
+                                  "authentication": {
+                                    "type": "ManagedServiceIdentity",
+                                    "audience": "https://monitor.azure.com"
+                                  },
+                                  "body": [
+                                    {
+                                      "TimeGenerated": "@{utcNow()}",
+                                      "EventType": "SyncWriteRejected",
+                                      "AlarmId": "@{outputs('Extract_Alarm_ID')}",
+                                      "IncidentId": "@{items('For_Each_Incident')?['properties']?['incidentNumber']}",
+                                      "AlarmType": "",
+                                      "Status": "@{coalesce(items('For_Each_Incident')?['properties']?['classification'], 'Unclassified')}",
+                                      "Severity": "High",
+                                      "Message": "@{concat('SOCRadar did not accept the status change for alarm ', outputs('Extract_Alarm_ID'), ': ', take(string(coalesce(body('Update_SOCRadar_Status')?['message'], 'no message returned')), 300))}",
+                                      "FullAlarmJson": "",
+                                      "company_name": "@{first(body('Filter_Company_Config'))?['CompanyName']}"
+                                    }
+                                  ]
+                                },
+                                "runAfter": {}
+                              }
+                            },
+                            "else": {
+                              "actions": {}
+                            },
+                            "runAfter": {}
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "Update_SOCRadar_Status": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Check_Severity_Sync_Enabled": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@parameters('SyncSeverity')",
+                              true
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Map_Severity": {
+                          "type": "Compose",
+                          "inputs": "@if(equals(items('For_Each_Incident')?['properties']?['severity'], 'High'), 'HIGH', if(equals(items('For_Each_Incident')?['properties']?['severity'], 'Medium'), 'MEDIUM', 'LOW'))",
+                          "runAfter": {}
+                        },
+                        "Update_SOCRadar_Severity": {
+                          "type": "Http",
+                          "inputs": {
+                            "method": "POST",
+                            "uri": "https://platform.socradar.com/api/company/@{first(body('Filter_Company_Config'))?['CompanyId']}/alarm/severity",
+                            "headers": {
+                              "API-Key": "@{parameters('SOCRadarAPIKey')}",
+                              "Content-Type": "application/json"
+                            },
+                            "body": {
+                              "alarm_ids": "@createArray(int(outputs('Extract_Alarm_ID')))",
+                              "severity": "@{outputs('Map_Severity')}"
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 4,
+                              "interval": "PT10S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runtimeConfiguration": {
+                            "secureData": {
+                              "properties": [
+                                "inputs"
+                              ]
+                            }
+                          },
+                          "runAfter": {
+                            "Map_Severity": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {}
+                      },
+                      "runAfter": {
+                        "Update_SOCRadar_Status": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "Check_Has_Synced_Tag": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Check_Company_Unmatched": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@items('For_Each_Incident')?['properties']?['status']",
+                          "Closed"
+                        ]
+                      },
+                      {
+                        "equals": [
+                          "@outputs('Check_Has_Synced_Tag')",
+                          false
+                        ]
+                      },
+                      {
+                        "equals": [
+                          "@length(body('Filter_Company_Config'))",
+                          0
+                        ]
+                      },
+                      {
+                        "equals": [
+                          "@parameters('EnableAuditLogging')",
+                          true
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Log_Unmatched_Company": {
+                      "type": "Http",
+                      "inputs": {
+                        "method": "POST",
+                        "uri": "@{concat(parameters('AuditDcrEndpoint'), '/dataCollectionRules/', parameters('AuditDcrImmutableId'), '/streams/', parameters('AuditStreamName'), '?api-version=2023-01-01')}",
+                        "headers": {
+                          "Content-Type": "application/json"
+                        },
+                        "authentication": {
+                          "type": "ManagedServiceIdentity",
+                          "audience": "https://monitor.azure.com"
+                        },
+                        "body": [
+                          {
+                            "TimeGenerated": "@{utcNow()}",
+                            "EventType": "CompanySkippedUnmatched",
+                            "AlarmId": "@{outputs('Extract_Alarm_ID')}",
+                            "IncidentId": "@{items('For_Each_Incident')?['properties']?['incidentNumber']}",
+                            "AlarmType": "",
+                            "Status": "@{coalesce(items('For_Each_Incident')?['properties']?['classification'], 'Unclassified')}",
+                            "Severity": "@{coalesce(items('For_Each_Incident')?['properties']?['severity'], 'Medium')}",
+                            "Message": "@{concat('Incident skipped: company name ', coalesce(outputs('Extract_Company_Name'), ''), ' parsed from the incident title is not in the CompanyNames parameter. Alarm ', coalesce(outputs('Extract_Alarm_ID'), ''), ' was NOT synced back to SOCRadar.')}",
+                            "FullAlarmJson": "",
+                            "company_name": "@{first(body('Filter_Company_Config'))?['CompanyName']}"
+                          }
+                        ]
+                      },
+                      "runAfter": {}
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "Check_Has_Synced_Tag": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Pagination_Loop_Closed": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Validate_Company_Arrays": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@length(split(parameters('CompanyIds'), ','))",
+                      "@length(split(parameters('CompanyNames'), ','))"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Lengths_Match": {
+                  "type": "Compose",
+                  "inputs": "ok",
+                  "runAfter": {}
+                }
+              },
+              "else": {
+                "actions": {
+                  "Terminate_On_Mismatch": {
+                    "type": "Terminate",
+                    "inputs": {
+                      "runStatus": "Failed",
+                      "runError": {
+                        "code": "InvalidInput",
+                        "message": "@concat('CompanyIds count (', string(length(split(parameters('CompanyIds'), ','))), ') must equal CompanyNames count (', string(length(split(parameters('CompanyNames'), ','))), '). Re-deploy with matching CSV lengths.')"
+                      }
+                    },
+                    "runAfter": {}
+                  }
+                }
+              },
+              "runAfter": {}
+            }
+          }
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azuresentinel": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', variables('SentinelConnectionName'))]",
+                "connectionName": "[variables('SentinelConnectionName')]",
+                "connectionProperties": {
+                  "authentication": {
+                    "type": "ManagedServiceIdentity"
+                  }
+                },
+                "id": "[subscriptionResourceId('Microsoft.Web/locations/managedApis', resourceGroup().location, 'azuresentinel')]"
+              }
+            }
+          },
+          "SOCRadarAPIKey": {
+            "value": "[parameters('SOCRadarAPIKey')]"
+          },
+          "CompanyIds": {
+            "value": "[parameters('CompanyIds')]"
+          },
+          "CompanyNames": {
+            "value": "[parameters('CompanyNames')]"
+          },
+          "WorkspaceName": {
+            "value": "[parameters('WorkspaceName')]"
+          },
+          "PollingIntervalMinutes": {
+            "value": "[parameters('PollingIntervalMinutes')]"
+          },
+          "EnableAuditLogging": {
+            "value": "[parameters('EnableAuditLogging')]"
+          },
+          "AuditDcrEndpoint": {
+            "value": "[parameters('AuditDcrEndpoint')]"
+          },
+          "AuditDcrImmutableId": {
+            "value": "[parameters('AuditDcrImmutableId')]"
+          },
+          "AuditStreamName": {
+            "value": "[parameters('AuditStreamName')]"
+          },
+          "ManagementBaseUrl": {
+            "value": "[variables('_managementBaseUrl')]"
+          },
+          "SyncSeverity": {
+            "value": "[parameters('SyncSeverity')]"
+          }
+        }
+      },
+      "tags": {
+        "hidden-SentinelTemplateName": "SOCRadar-MSSP-Alarm-Sync",
+        "hidden-SentinelTemplateVersion": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(variables('workspaceResourceId'), parameters('PlaybookName'), variables('sentinelRoleDefinitionId'))]",
+      "scope": "[variables('workspaceResourceId')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Logic/workflows', parameters('PlaybookName'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('sentinelRoleDefinitionId')]",
+        "principalId": "[reference(resourceId('Microsoft.Logic/workflows', parameters('PlaybookName')), '2019-05-01', 'Full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(parameters('AuditDcrResourceId'), parameters('PlaybookName'), variables('MonitoringMetricsPublisherRoleId'))]",
+      "scope": "[parameters('AuditDcrResourceId')]",
+      "condition": "[and(parameters('EnableAuditLogging'), not(empty(parameters('AuditDcrResourceId'))))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Logic/workflows', parameters('PlaybookName'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('MonitoringMetricsPublisherRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Logic/workflows', parameters('PlaybookName')), '2019-05-01', 'Full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      }
+    }
+  ],
+  "outputs": {
+    "logicAppName": {
+      "type": "string",
+      "value": "[parameters('PlaybookName')]"
+    },
+    "pollingInterval": {
+      "type": "string",
+      "value": "[concat(parameters('PollingIntervalMinutes'), ' minutes')]"
+    },
+    "lookbackWindow": {
+      "type": "string",
+      "value": "[concat(mul(2, parameters('PollingIntervalMinutes')), ' minutes (2x polling)')]"
+    },
+    "filter": {
+      "type": "string",
+      "value": "SOCRadar tag + Closed + lastModified (API) + Synced check (Logic App)"
+    }
+  }
+}

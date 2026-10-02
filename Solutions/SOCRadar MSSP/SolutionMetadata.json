@@ -1,0 +1,22 @@
+{
+  "publisherId": "socradar",
+  "offerId": "azure-sentinel-solution-socradar-mssp",
+  "firstPublishDate": "2026-05-15",
+  "lastPublishDate": "2026-05-15",
+  "providers": [
+    "SOCRadar"
+  ],
+  "categories": {
+    "domains": [
+      "Security - Threat Intelligence",
+      "Security - Threat Protection"
+    ],
+    "verticals": []
+  },
+  "support": {
+    "name": "SOCRadar",
+    "email": "integration@socradar.io",
+    "tier": "Partner",
+    "link": "https://socradar.io/support"
+  }
+}

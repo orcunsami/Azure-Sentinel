@@ -1,0 +1,32 @@
+id: 8cf448f8-52b5-43cf-9e27-f39fd09174c3
+name: SOCRadar MSSP - Alarm Volume Spike
+description: |
+  'Detects unusual spikes in SOCRadar alarm volume that may indicate an active campaign, coordinated attack, or data breach. The baseline and the comparison are both per company_name, so one noisy tenant does not mask or trigger another. Triggers when a company's alarm count in the last hour exceeds its own 7-day hourly average by more than 3x.'
+severity: Medium
+status: Available
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 7d
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - Impact
+  - Exfiltration
+relevantTechniques:
+  - T1485
+  - T1567
+query: |
+    let baseline = SOCRadar_MSSP_Alarms_CL
+    | where TimeGenerated > ago(7d) and TimeGenerated < ago(1h)
+    | summarize AvgHourly = count() / 168.0 by company_name;
+    let recent = SOCRadar_MSSP_Alarms_CL
+    | where TimeGenerated > ago(1h)
+    | summarize RecentCount = count() by company_name;
+    recent
+    | join kind=inner (baseline) on company_name
+    | where RecentCount > (AvgHourly * 3) and RecentCount > 5
+    | extend SpikeRatio = round(RecentCount / AvgHourly, 2)
+    | extend timestamp = now()
+    | project timestamp, company_name, RecentCount, AvgHourly, SpikeRatio
+version: 1.0.2
+kind: Scheduled
