@@ -1,0 +1,17 @@
+id: c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f
+name: SOCRadar TAXII - IOC Overview
+description: |
+  Overview of threat intelligence indicators ingested via SOCRadar TAXII 2.1 feed.
+  Groups indicators by type and shows counts per observable key.
+severity: Informational
+requiredDataConnectors: []
+tactics:
+  - CommandAndControl
+  - Exfiltration
+relevantTechniques: []
+query: |
+  ThreatIntelIndicators
+  | where SourceSystem == "SOCRadar TAXII"
+  | where TimeGenerated > ago(7d)
+  | summarize Count=count() by ObservableKey
+  | order by Count desc

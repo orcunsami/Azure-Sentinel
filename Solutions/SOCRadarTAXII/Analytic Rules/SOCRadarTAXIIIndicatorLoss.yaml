@@ -1,0 +1,28 @@
+id: 8f2c6d41-53ab-4e79-9c18-2ad7be40f5c3
+name: SOCRadar TAXII indicators did not reach Microsoft Sentinel
+description: |
+  'A TAXII import run did not finish cleanly. Either the run could not reach the TAXII server at all, or it reached it and some indicators never made it into Microsoft Sentinel. The checkpoint does not advance on a failed run, so the next run retries from the same position. What matters is repetition: a collection that keeps reporting this is not recovering on its own, and the feed is standing still. Check the error message on the most recent run, then confirm the credentials and the upload path.'
+severity: Medium
+status: Available
+requiredDataConnectors: []
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - Impact
+relevantTechniques:
+  - T1565
+query: |
+    SOCRadar_TAXII_Audit_CL
+    | where TimeGenerated > ago(1h)
+    | where Status != "Success"
+    | summarize
+        Runs = count(),
+        IndicatorsLost = sum(IndicatorsFailed),
+        LastError = anylast(ErrorMessage),
+        LastSeen = max(TimeGenerated)
+        by ApiRoot, CollectionId
+    | extend timestamp = LastSeen
+version: 1.0.0
+kind: Scheduled

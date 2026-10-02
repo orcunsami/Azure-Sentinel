@@ -1,0 +1,36 @@
+{
+  "Name": "SOCRadarTAXII",
+  "Author": "SOCRadar - integration@socradar.io",
+  "Logo": "<img src=\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/socradar.svg\" width=\"75px\" height=\"75px\">",
+  "Description": "The [SOCRadar](https://socradar.io/) TAXII 2.1 solution for Microsoft Sentinel imports threat intelligence indicators from SOCRadar TAXII server using an Azure Function App. Supports multiple collections, cursor-based pagination, checkpoint/resume, and batch upload to Microsoft Sentinel TI.",
+  "WorkbookBladeDescription": "This solution installs a workbook to visualize SOCRadar TAXII threat intelligence indicators and audit operations.",
+  "HuntingQueryBladeDescription": "This solution installs hunting queries to analyze SOCRadar TAXII threat intelligence indicators in Microsoft Sentinel.",
+  "AnalyticalRuleBladeDescription": "This solution installs an analytic rule template that reports when a TAXII import run leaves indicators behind.",
+  "PlaybooksBladeDescription": "This solution installs an Azure Function App for TAXII 2.1 ingestion and data collection infrastructure for Microsoft Sentinel.",
+  "Workbooks": [
+    "Workbooks/SOCRadar-TAXII-Dashboard.json"
+  ],
+  "WorkbookDescription": [
+    "SOCRadar TAXII 2.1 Dashboard provides visibility into imported threat indicators, collection statistics, and audit logs."
+  ],
+  "Hunting Queries": [
+    "Hunting Queries/SOCRadar-TAXII-IOC-Overview.yaml",
+    "Hunting Queries/SOCRadar-TAXII-Recent-Indicators.yaml"
+  ],
+  "Analytic Rules": [
+    "Analytic Rules/SOCRadarTAXIIIndicatorLoss.yaml"
+  ],
+  "Playbooks": [
+    "Playbooks/SOCRadar-TAXII-FunctionApp/azuredeploy.json",
+    "Playbooks/SOCRadar-TAXII-Infrastructure/azuredeploy.json"
+  ],
+  "PlaybookDescription": [
+    "Deploys an Azure Function App that imports STIX 2.1 threat intelligence indicators from SOCRadar TAXII server into Microsoft Sentinel TI with cursor-based pagination and checkpoint/resume.",
+    "Creates SOCRadar_TAXII_Audit_CL custom table with data collection infrastructure for TAXII import audit logging."
+  ],
+  "BasePath": "C:\\GitHub\\Azure-Sentinel\\Solutions\\SOCRadarTAXII",
+  "Version": "3.0.0",
+  "Metadata": "SolutionMetadata.json",
+  "TemplateSpec": true,
+  "Is1Pconnector": false
+}

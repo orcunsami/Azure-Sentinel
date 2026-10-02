@@ -1,0 +1,26 @@
+id: d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a
+name: SOCRadar TAXII - Ingestion Health
+description: |
+  Monitors TAXII ingestion health by checking recent import runs.
+  Identifies failed and partial runs, indicators that did not reach Microsoft Sentinel and creation rates per collection.
+  Requires SOCRadar-TAXII-Infrastructure playbook deployment.
+severity: Medium
+requiredDataConnectors: []
+tactics:
+  - Collection
+relevantTechniques: []
+query: |
+  SOCRadar_TAXII_Audit_CL
+  | where TimeGenerated > ago(7d)
+  | summarize
+      TotalRuns=count(),
+      SuccessRuns=countif(Status == "Success"),
+      FailedRuns=countif(Status == "Failed"),
+      PartialRuns=countif(Status == "PartialSuccess"),
+      TotalCreated=sum(IndicatorsCreated),
+      TotalFailed=sum(IndicatorsFailed),
+      TotalRevoked=sum(IndicatorsRevoked),
+      AvgDurationMs=avg(DurationMs)
+    by CollectionId
+  | extend SuccessRate = round(100.0 * SuccessRuns / TotalRuns, 1)
+  | order by FailedRuns desc, PartialRuns desc

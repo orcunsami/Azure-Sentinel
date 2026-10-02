@@ -1,0 +1,1692 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "author": "SOCRadar - integration@socradar.io",
+    "comments": "Solution template for SOCRadarTAXII"
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Not used, but needed to pass arm-ttk test `Location-Should-Not-Be-Hardcoded`.  We instead use the `workspace-location` which is derived from the LA workspace"
+      }
+    },
+    "workspace-location": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "[concat('Region to deploy solution resources -- separate from location selection',parameters('location'))]"
+      }
+    },
+    "workspace": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Workspace name for Log Analytics where Microsoft Sentinel is setup"
+      }
+    },
+    "workbook1-name": {
+      "type": "string",
+      "defaultValue": "SOCRadarTAXII Dashboard",
+      "minLength": 1,
+      "metadata": {
+        "description": "Name for the workbook"
+      }
+    }
+  },
+  "variables": {
+    "email": "integration@socradar.io",
+    "_email": "[variables('email')]",
+    "_solutionName": "SOCRadarTAXII",
+    "_solutionVersion": "3.0.0",
+    "solutionId": "socradar.azure-sentinel-solution-socradar-taxii",
+    "_solutionId": "[variables('solutionId')]",
+    "workbookVersion1": "1.0.0",
+    "workbookContentId1": "SOCRadarTAXIIDashboard",
+    "workbookId1": "[resourceId('Microsoft.Insights/workbooks', variables('workbookContentId1'))]",
+    "workbookTemplateSpecName1": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-wb-',uniquestring(variables('_workbookContentId1'))))]",
+    "_workbookContentId1": "[variables('workbookContentId1')]",
+    "workspaceResourceId": "[resourceId('microsoft.OperationalInsights/Workspaces', parameters('workspace'))]",
+    "_workbookcontentProductId1": "[concat(take(variables('_solutionId'),50),'-','wb','-', uniqueString(concat(variables('_solutionId'),'-','Workbook','-',variables('_workbookContentId1'),'-', variables('workbookVersion1'))))]",
+    "huntingQueryObject1": {
+      "huntingQueryVersion1": "1.0.0",
+      "_huntingQuerycontentId1": "c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f",
+      "huntingQueryTemplateSpecName1": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f')))]"
+    },
+    "huntingQueryObject2": {
+      "huntingQueryVersion2": "1.0.0",
+      "_huntingQuerycontentId2": "d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a",
+      "huntingQueryTemplateSpecName2": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f9a')))]"
+    },
+    "TemplateEmptyArray": "[json('[]')]",
+    "analyticRuleObject1": {
+      "analyticRuleVersion1": "1.0.0",
+      "_analyticRulecontentId1": "8f2c6d41-53ab-4e79-9c18-2ad7be40f5c3",
+      "analyticRuleId1": "[resourceId('Microsoft.SecurityInsights/AlertRuleTemplates', '8f2c6d41-53ab-4e79-9c18-2ad7be40f5c3')]",
+      "analyticRuleTemplateSpecName1": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-ar-',uniquestring('8f2c6d41-53ab-4e79-9c18-2ad7be40f5c3')))]",
+      "_analyticRulecontentProductId1": "[concat(take(variables('_solutionId'),50),'-','ar','-', uniqueString(concat(variables('_solutionId'),'-','AnalyticsRule','-','8f2c6d41-53ab-4e79-9c18-2ad7be40f5c3','-', '1.0.0')))]"
+    },
+    "SOCRadar-TAXII-FunctionApp": "SOCRadar-TAXII-FunctionApp",
+    "_SOCRadar-TAXII-FunctionApp": "[variables('SOCRadar-TAXII-FunctionApp')]",
+    "blanks": "[replace('b', 'b', '')]",
+    "playbookVersion1": "1.0",
+    "playbookContentId1": "SOCRadar-TAXII-FunctionApp",
+    "_playbookContentId1": "[variables('playbookContentId1')]",
+    "playbookTemplateSpecName1": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-fa-',uniquestring(variables('_playbookContentId1'))))]",
+    "_playbookcontentProductId1": "[concat(take(variables('_solutionId'),50),'-','fa','-', uniqueString(concat(variables('_solutionId'),'-','AzureFunction','-',variables('_playbookContentId1'),'-', variables('playbookVersion1'))))]",
+    "SOCRadar-TAXII-Infrastructure": "SOCRadar-TAXII-Infrastructure",
+    "_SOCRadar-TAXII-Infrastructure": "[variables('SOCRadar-TAXII-Infrastructure')]",
+    "playbookVersion2": "1.0",
+    "playbookContentId2": "SOCRadar-TAXII-Infrastructure",
+    "_playbookContentId2": "[variables('playbookContentId2')]",
+    "playbookId2": "[resourceId('Microsoft.Logic/workflows', variables('playbookContentId2'))]",
+    "playbookTemplateSpecName2": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-pl-',uniquestring(variables('_playbookContentId2'))))]",
+    "_playbookcontentProductId2": "[concat(take(variables('_solutionId'),50),'-','pl','-', uniqueString(concat(variables('_solutionId'),'-','Playbook','-',variables('_playbookContentId2'),'-', variables('playbookVersion2'))))]",
+    "_solutioncontentProductId": "[concat(take(variables('_solutionId'),50),'-','sl','-', uniqueString(concat(variables('_solutionId'),'-','Solution','-',variables('_solutionId'),'-', variables('_solutionVersion'))))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('workbookTemplateSpecName1')]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-TAXII-Dashboard Workbook with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('workbookVersion1')]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.Insights/workbooks",
+              "name": "[variables('workbookContentId1')]",
+              "location": "[parameters('workspace-location')]",
+              "kind": "shared",
+              "apiVersion": "2021-08-01",
+              "metadata": {
+                "description": "Visualize SOCRadar TAXII threat intelligence indicators imported into Microsoft Sentinel: indicator counts by type, collection statistics, ingestion trends and the audit log."
+              },
+              "properties": {
+                "displayName": "[parameters('workbook1-name')]",
+                "serializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"## SOCRadar TAXII 2.1 Dashboard\\nThreat intelligence indicator analytics from SOCRadar TAXII 2.1 feed imports.\"},\"name\":\"header\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Overview\"},\"name\":\"overview-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| summarize Count=dcount(Id)\\n| project Count\",\"size\":4,\"title\":\"Total TI Indicators\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"total-indicators\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| extend TagList = split(Tags, \\\",\\\")\\n| mv-expand Tag = TagList\\n| where tostring(Tag) startswith \\\"collection-\\\"\\n| summarize Count=dcount(tostring(Tag))\\n| project Count\",\"size\":4,\"title\":\"Active Sources\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"active-sources\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| summarize Count=dcount(ObservableKey)\\n| project Count\",\"size\":4,\"title\":\"Indicator Types\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"indicator-types\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| where TimeGenerated > ago(24h)\\n| summarize Count=dcount(Id)\\n| project Count\",\"size\":4,\"title\":\"Last 24 Hours\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"last-24h\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Indicator Analysis\"},\"name\":\"analysis-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| summarize Count=count() by ObservableKey\\n| order by Count desc\",\"size\":2,\"title\":\"Indicators by Type\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"customWidth\":\"50\",\"name\":\"indicators-by-type\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| extend TagList = split(Tags, \\\",\\\")\\n| mv-expand Tag = TagList\\n| where tostring(Tag) startswith \\\"collection-\\\"\\n| summarize Count=count() by tostring(Tag)\\n| order by Count desc\",\"size\":2,\"title\":\"Indicators by Source\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"customWidth\":\"50\",\"name\":\"indicators-by-source\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| summarize Count=count() by bin(TimeGenerated, 1h)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Indicators Over Time\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"timechart\"},\"name\":\"indicators-timeline\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| project TimeGenerated, ObservableKey, ObservableValue, Confidence, ValidFrom, ValidUntil\\n| order by TimeGenerated desc\\n| take 50\",\"size\":0,\"title\":\"Recent Indicators\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"recent-indicators\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Audit Monitoring\"},\"name\":\"audit-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_TAXII_Audit_CL\\n| summarize Count=count() by Status\\n| order by Count desc\",\"size\":2,\"title\":\"Import Run Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"customWidth\":\"50\",\"name\":\"audit-status\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_TAXII_Audit_CL\\n| summarize Created=sum(IndicatorsCreated), Failed=sum(IndicatorsFailed), Revoked=sum(IndicatorsRevoked) by bin(TimeGenerated, 1h)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Indicators Created, Failed and Revoked\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"timechart\"},\"customWidth\":\"50\",\"name\":\"created-vs-revoked\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_TAXII_Audit_CL\\n| project TimeGenerated, ApiRoot, CollectionId, IndicatorsCreated, IndicatorsSkipped, IndicatorsFailed, IndicatorsRevoked, DurationMs, Status, ErrorMessage\\n| order by TimeGenerated desc\\n| take 20\",\"size\":0,\"title\":\"Recent Import Runs\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"recent-runs\"}],\"isLocked\":false,\"fromTemplateId\":\"sentinel-SOCRadarTAXII\"}\n",
+                "version": "1.0",
+                "sourceId": "[variables('workspaceResourceId')]",
+                "category": "sentinel"
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('Workbook-', last(split(variables('workbookId1'),'/'))))]",
+              "properties": {
+                "description": "Visualize SOCRadar TAXII threat intelligence indicators imported into Microsoft Sentinel: indicator counts by type, collection statistics, ingestion trends and the audit log.",
+                "parentId": "[variables('workbookId1')]",
+                "contentId": "[variables('_workbookContentId1')]",
+                "kind": "Workbook",
+                "version": "[variables('workbookVersion1')]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadarTAXII",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                },
+                "dependencies": {
+                  "operator": "AND",
+                  "criteria": [
+                    {
+                      "contentId": "ThreatIntelIndicators",
+                      "kind": "DataType"
+                    },
+                    {
+                      "contentId": "SOCRadar_TAXII_Audit_CL",
+                      "kind": "DataType"
+                    }
+                  ]
+                }
+              },
+              "description": "SOCRadar TAXII 2.1 Dashboard provides visibility into imported threat indicators, collection statistics, and audit logs."
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('_workbookContentId1')]",
+        "contentKind": "Workbook",
+        "displayName": "[parameters('workbook1-name')]",
+        "contentProductId": "[variables('_workbookcontentProductId1')]",
+        "id": "[variables('_workbookcontentProductId1')]",
+        "version": "[variables('workbookVersion1')]"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('huntingQueryObject1').huntingQueryTemplateSpecName1]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-TAXII-IOC-Overview_HuntingQueries Hunting Query with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('huntingQueryObject1').huntingQueryVersion1]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/savedSearches",
+              "apiVersion": "2025-07-01",
+              "name": "SOCRadarTAXII_Hunting_Query_1",
+              "location": "[parameters('workspace-location')]",
+              "properties": {
+                "eTag": "*",
+                "displayName": "SOCRadar TAXII - IOC Overview",
+                "category": "Hunting Queries",
+                "query": "ThreatIntelIndicators\n| where SourceSystem == \"SOCRadar TAXII\"\n| where TimeGenerated > ago(7d)\n| summarize Count=count() by ObservableKey\n| order by Count desc\n",
+                "version": 2,
+                "tags": [
+                  {
+                    "name": "description",
+                    "value": "Overview of threat intelligence indicators ingested via SOCRadar TAXII 2.1 feed.\nGroups indicators by type and shows counts per observable key."
+                  },
+                  {
+                    "name": "tactics",
+                    "value": "CommandAndControl,Exfiltration"
+                  },
+                  {
+                    "name": "severity",
+                    "value": "Informational"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('HuntingQuery-', last(split(resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject1')._huntingQuerycontentId1),'/'))))]",
+              "properties": {
+                "description": "SOCRadarTAXII Hunting Query 1",
+                "parentId": "[resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject1')._huntingQuerycontentId1)]",
+                "contentId": "[variables('huntingQueryObject1')._huntingQuerycontentId1]",
+                "kind": "HuntingQuery",
+                "version": "[variables('huntingQueryObject1').huntingQueryVersion1]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadarTAXII",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('huntingQueryObject1')._huntingQuerycontentId1]",
+        "contentKind": "HuntingQuery",
+        "displayName": "SOCRadar TAXII - IOC Overview",
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject1')._huntingQuerycontentId1,'-', '1.0.0')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject1')._huntingQuerycontentId1,'-', '1.0.0')))]",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('huntingQueryObject2').huntingQueryTemplateSpecName2]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-TAXII-Recent-Indicators_HuntingQueries Hunting Query with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('huntingQueryObject2').huntingQueryVersion2]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/savedSearches",
+              "apiVersion": "2025-07-01",
+              "name": "SOCRadarTAXII_Hunting_Query_2",
+              "location": "[parameters('workspace-location')]",
+              "properties": {
+                "eTag": "*",
+                "displayName": "SOCRadar TAXII - Ingestion Health",
+                "category": "Hunting Queries",
+                "query": "SOCRadar_TAXII_Audit_CL\n| where TimeGenerated > ago(7d)\n| summarize\n    TotalRuns=count(),\n    SuccessRuns=countif(Status == \"Success\"),\n    FailedRuns=countif(Status == \"Failed\"),\n    PartialRuns=countif(Status == \"PartialSuccess\"),\n    TotalCreated=sum(IndicatorsCreated),\n    TotalFailed=sum(IndicatorsFailed),\n    TotalRevoked=sum(IndicatorsRevoked),\n    AvgDurationMs=avg(DurationMs)\n  by CollectionId\n| extend SuccessRate = round(100.0 * SuccessRuns / TotalRuns, 1)\n| order by FailedRuns desc, PartialRuns desc\n",
+                "version": 2,
+                "tags": [
+                  {
+                    "name": "description",
+                    "value": "Monitors TAXII ingestion health by checking recent import runs.\nIdentifies failed and partial runs, indicators that did not reach Microsoft Sentinel and creation rates per collection.\nRequires SOCRadar-TAXII-Infrastructure playbook deployment."
+                  },
+                  {
+                    "name": "tactics",
+                    "value": "Collection"
+                  },
+                  {
+                    "name": "severity",
+                    "value": "Medium"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('HuntingQuery-', last(split(resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject2')._huntingQuerycontentId2),'/'))))]",
+              "properties": {
+                "description": "SOCRadarTAXII Hunting Query 2",
+                "parentId": "[resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject2')._huntingQuerycontentId2)]",
+                "contentId": "[variables('huntingQueryObject2')._huntingQuerycontentId2]",
+                "kind": "HuntingQuery",
+                "version": "[variables('huntingQueryObject2').huntingQueryVersion2]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadarTAXII",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('huntingQueryObject2')._huntingQuerycontentId2]",
+        "contentKind": "HuntingQuery",
+        "displayName": "SOCRadar TAXII - Ingestion Health",
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject2')._huntingQuerycontentId2,'-', '1.0.0')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject2')._huntingQuerycontentId2,'-', '1.0.0')))]",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('analyticRuleObject1').analyticRuleTemplateSpecName1]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadarTAXIIIndicatorLoss_AnalyticalRules Analytics Rule with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('analyticRuleObject1').analyticRuleVersion1]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.SecurityInsights/AlertRuleTemplates",
+              "name": "[variables('analyticRuleObject1')._analyticRulecontentId1]",
+              "apiVersion": "2023-02-01-preview",
+              "kind": "Scheduled",
+              "location": "[parameters('workspace-location')]",
+              "properties": {
+                "description": "A TAXII import run did not finish cleanly. Either the run could not reach the TAXII server at all, or it reached it and some indicators never made it into Microsoft Sentinel. The checkpoint does not advance on a failed run, so the next run retries from the same position. What matters is repetition: a collection that keeps reporting this is not recovering on its own, and the feed is standing still. Check the error message on the most recent run, then confirm the credentials and the upload path.",
+                "displayName": "SOCRadar TAXII indicators did not reach Microsoft Sentinel",
+                "enabled": false,
+                "query": "SOCRadar_TAXII_Audit_CL\n| where TimeGenerated > ago(1h)\n| where Status != \"Success\"\n| summarize\n    Runs = count(),\n    IndicatorsLost = sum(IndicatorsFailed),\n    LastError = anylast(ErrorMessage),\n    LastSeen = max(TimeGenerated)\n    by ApiRoot, CollectionId\n| extend timestamp = LastSeen\n",
+                "queryFrequency": "PT1H",
+                "queryPeriod": "PT1H",
+                "severity": "Medium",
+                "suppressionDuration": "PT1H",
+                "suppressionEnabled": false,
+                "triggerOperator": "GreaterThan",
+                "triggerThreshold": 0,
+                "status": "Available",
+                "requiredDataConnectors": "[variables('TemplateEmptyArray')]",
+                "tactics": [
+                  "Impact"
+                ],
+                "techniques": [
+                  "T1565"
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('AnalyticsRule-', last(split(variables('analyticRuleObject1').analyticRuleId1,'/'))))]",
+              "properties": {
+                "description": "SOCRadarTAXII Analytics Rule 1",
+                "parentId": "[variables('analyticRuleObject1').analyticRuleId1]",
+                "contentId": "[variables('analyticRuleObject1')._analyticRulecontentId1]",
+                "kind": "AnalyticsRule",
+                "version": "[variables('analyticRuleObject1').analyticRuleVersion1]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadarTAXII",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('analyticRuleObject1')._analyticRulecontentId1]",
+        "contentKind": "AnalyticsRule",
+        "displayName": "SOCRadar TAXII indicators did not reach Microsoft Sentinel",
+        "contentProductId": "[variables('analyticRuleObject1')._analyticRulecontentProductId1]",
+        "id": "[variables('analyticRuleObject1')._analyticRulecontentProductId1]",
+        "version": "[variables('analyticRuleObject1').analyticRuleVersion1]"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('playbookTemplateSpecName1')]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-TAXII-FunctionApp Playbook with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('playbookVersion1')]",
+          "parameters": {
+            "WorkspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Microsoft Sentinel Log Analytics Workspace Name"
+              }
+            },
+            "DeployNewWorkspace": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Create the Log Analytics workspace named WorkspaceName when it does not exist yet. Leave true for a one-click install. A workspace that already exists under this name is left as it is: the workspace resource states no workspace-level settings, so its pricing tier, retention and daily cap are never touched. Set false when the workspace must already exist; a misspelled name then fails before anything is created. Only honoured when WorkspaceResourceGroup is the deployment resource group. An existing workspace in a different region than WorkspaceLocation fails the deployment with InvalidResourceLocation before anything is created."
+              }
+            },
+            "WorkspaceResourceGroup": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().name]",
+              "metadata": {
+                "description": "Resource group of the Microsoft Sentinel workspace. Leave the default when the workspace is in the resource group you deploy to. Set it when the workspace lives elsewhere: Microsoft Sentinel must already be enabled there, and the audit table and workspace role are created there by a nested deployment."
+              }
+            },
+            "WorkspaceLocation": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location/region of the Log Analytics workspace"
+              }
+            },
+            "ApiRoots": {
+              "type": "string",
+              "metadata": {
+                "description": "Comma-separated SOCRadar TAXII API root names (e.g., radar_alpha,radar_gamma)"
+              }
+            },
+            "CollectionIds": {
+              "type": "string",
+              "metadata": {
+                "description": "Comma-separated TAXII collection UUIDs matching API roots order (e.g., fd3fec42-...,f260cf45-...)"
+              }
+            },
+            "TAXIIUsername": {
+              "type": "string",
+              "metadata": {
+                "description": "TAXII server username issued by SOCRadar, e.g. radar_330, not the bare company ID"
+              }
+            },
+            "TAXIIPassword": {
+              "type": "securestring",
+              "metadata": {
+                "description": "TAXII server password (SOCRadar Platform API Key)"
+              }
+            },
+            "PollingIntervalMinutes": {
+              "type": "int",
+              "defaultValue": 60,
+              "minValue": 5,
+              "maxValue": 1440,
+              "metadata": {
+                "description": "How often to poll TAXII server (5-1440 minutes)"
+              }
+            },
+            "InitialLookbackHours": {
+              "type": "int",
+              "defaultValue": 48,
+              "minValue": 0,
+              "maxValue": 8760,
+              "metadata": {
+                "description": "Hours of history to fetch on first run (0 = all history, large collections may take several days to sync via checkpoints)"
+              }
+            },
+            "PackageUri": {
+              "type": "string",
+              "defaultValue": "https://github.com/orcunsami/SOCRadar-Azure-TAXII21/releases/download/v1.0.0/FunctionApp.zip",
+              "metadata": {
+                "description": "Function App deployment package. Leave the default unless you are testing a build before it is released."
+              }
+            },
+            "EnableAuditLogging": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable audit logging to SOCRadar_TAXII_Audit_CL custom table"
+              }
+            },
+            "_packagePushTimestamp": {
+              "type": "string",
+              "defaultValue": "[[utcNow()]",
+              "metadata": {
+                "description": "Set automatically. Forces the package push to run again on a redeploy, which would otherwise reset WEBSITE_RUN_FROM_PACKAGE and leave the app empty."
+              }
+            }
+          },
+          "variables": {
+            "functionAppName": "[[concat('socradar-taxii-', uniqueString(resourceGroup().id))]",
+            "managedIdentityName": "SOCRadar-TAXII-MI",
+            "hostingPlanName": "SOCRadar-TAXII-Plan",
+            "storageAccountName": "[[take(concat('srtaxii', uniqueString(resourceGroup().id)), 24)]",
+            "tableName": "TAXIIState",
+            "SentinelContributorRoleId": "ab8e14d6-4a74-4a29-9ba8-549422addade",
+            "StorageTableDataContributorRoleId": "0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3",
+            "MonitoringMetricsPublisherRoleId": "3913510d-42f4-4e42-8a64-420c390055eb",
+            "WebsiteContributorRoleId": "de139f84-1756-47ae-9be6-808fbbe84772",
+            "appInsightsName": "[[concat('socradar-taxii-ai-', uniqueString(resourceGroup().id))]",
+            "DceName": "SOCRadar-TAXII-DCE",
+            "AuditTableName": "SOCRadar_TAXII_Audit_CL",
+            "AuditDcrName": "SOCRadar-TAXII-Audit-DCR",
+            "AuditStreamName": "Custom-SOCRadar_TAXII_Audit_CL",
+            "isExternalWorkspace": "[[not(equals(parameters('WorkspaceResourceGroup'), resourceGroup().name))]",
+            "deployWorkspace": "[[and(parameters('DeployNewWorkspace'), not(variables('isExternalWorkspace')))]",
+            "workspaceResourceId": "[[resourceId(parameters('WorkspaceResourceGroup'), 'Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+            "pollingSchedule": "[[if(greaterOrEquals(parameters('PollingIntervalMinutes'), 60), concat('0 0 */', string(div(parameters('PollingIntervalMinutes'), 60)), ' * * *'), concat('0 */', string(parameters('PollingIntervalMinutes')), ' * * * *'))]",
+            "workspace-location-inline": "[concat('[resourceGroup().locatio', 'n]')]",
+            "playbookContentId1": "SOCRadar-TAXII-FunctionApp",
+            "playbookId1": "[[resourceId('Microsoft.Logic/workflows', variables('playbookContentId1'))]",
+            "workspace-name": "[parameters('workspace')]"
+          },
+          "resources": [
+            {
+              "comments": "Resolves the existing workspace before any resource is created. A condition:false resource counts as a satisfied dependency in ARM, so depending on the workspace resource itself does not stop the deployment when WorkspaceName does not exist and DeployNewWorkspace is false -- it would create the storage account, the user-assigned identity and the App Service Plan and only then fail. This checks that the workspace EXISTS and nothing else.",
+              "condition": "[[not(variables('deployWorkspace'))]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2021-04-01",
+              "name": "precheck-workspace-exists",
+              "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "parameters": {
+                  "WorkspaceResourceId": {
+                    "value": "[[variables('workspaceResourceId')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0",
+                  "parameters": {
+                    "WorkspaceResourceId": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": "[variables('TemplateEmptyArray')]",
+                  "outputs": {
+                    "workspaceId": {
+                      "type": "string",
+                      "value": "[[reference(parameters('WorkspaceResourceId'), '2023-09-01', 'Full').properties.customerId]"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "comments": "Cross-RG only. This template creates the Microsoft Sentinel solution and the onboarding state only when the workspace is in the deployment resource group, so nothing onboards an external workspace and the deployment would succeed against one with no Microsoft Sentinel on it. onboardingStates/default returns NotFound in exactly that case, which is the polarity reference() can assert. The solution resource alone is not the signal: a workspace can carry it and still have no onboarding state.",
+              "condition": "[[variables('isExternalWorkspace')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2021-04-01",
+              "name": "precheck-external-workspace",
+              "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "parameters": {
+                  "WorkspaceResourceId": {
+                    "value": "[[variables('workspaceResourceId')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0",
+                  "parameters": {
+                    "WorkspaceResourceId": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": "[variables('TemplateEmptyArray')]",
+                  "outputs": {
+                    "sentinelOnboarded": {
+                      "type": "string",
+                      "value": "[[reference(extensionResourceId(parameters('WorkspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default'), '2023-02-01', 'Full').id]"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[[parameters('WorkspaceName')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "condition": "[[variables('deployWorkspace')]",
+              "properties": {}
+            },
+            {
+              "condition": "[[not(variables('isExternalWorkspace'))]",
+              "type": "Microsoft.OperationsManagement/solutions",
+              "apiVersion": "2015-11-01-preview",
+              "name": "[[concat('SecurityInsights(', parameters('WorkspaceName'), ')')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "plan": {
+                "name": "[[concat('SecurityInsights(', parameters('WorkspaceName'), ')')]",
+                "publisher": "Microsoft",
+                "product": "OMSGallery/SecurityInsights",
+                "promotionCode": "[variables('blanks')]"
+              },
+              "properties": {
+                "workspaceResourceId": "[[variables('workspaceResourceId')]"
+              }
+            },
+            {
+              "condition": "[[not(variables('isExternalWorkspace'))]",
+              "type": "Microsoft.OperationalInsights/workspaces/providers/onboardingStates",
+              "apiVersion": "2024-03-01",
+              "name": "[[concat(parameters('WorkspaceName'), '/Microsoft.SecurityInsights/default')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.OperationsManagement/solutions', concat('SecurityInsights(', parameters('WorkspaceName'), ')'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {}
+            },
+            {
+              "dependsOn": [
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2025-01-01",
+              "name": "[[variables('storageAccountName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "kind": "StorageV2",
+              "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2"
+              }
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/tableServices",
+              "apiVersion": "2025-01-01",
+              "name": "[[concat(variables('storageAccountName'), '/default')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
+              "apiVersion": "2025-01-01",
+              "name": "[[concat(variables('storageAccountName'), '/default/', variables('tableName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Storage/storageAccounts/tableServices', variables('storageAccountName'), 'default')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ]
+            },
+            {
+              "dependsOn": [
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "condition": "[[parameters('EnableAuditLogging')]",
+              "type": "Microsoft.Insights/dataCollectionEndpoints",
+              "apiVersion": "2023-03-11",
+              "name": "[[variables('DceName')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "properties": {
+                "description": "Data Collection Endpoint for SOCRadar TAXII audit logging",
+                "networkAcls": {
+                  "publicNetworkAccess": "Enabled"
+                }
+              }
+            },
+            {
+              "condition": "[[and(parameters('EnableAuditLogging'), not(variables('isExternalWorkspace')))]",
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[[concat(parameters('WorkspaceName'), '/', variables('AuditTableName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+                "[[resourceId('Microsoft.OperationsManagement/solutions', concat('SecurityInsights(', parameters('WorkspaceName'), ')'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "schema": {
+                  "name": "[[variables('AuditTableName')]",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime",
+                      "description": "Event timestamp"
+                    },
+                    {
+                      "name": "ApiRoot",
+                      "type": "string",
+                      "description": "TAXII API root name"
+                    },
+                    {
+                      "name": "CollectionId",
+                      "type": "string",
+                      "description": "TAXII collection UUID"
+                    },
+                    {
+                      "name": "IndicatorsCreated",
+                      "type": "int",
+                      "description": "Indicators successfully uploaded"
+                    },
+                    {
+                      "name": "IndicatorsSkipped",
+                      "type": "int",
+                      "description": "Indicators Microsoft Sentinel accepted the request for but rejected"
+                    },
+                    {
+                      "name": "IndicatorsFailed",
+                      "type": "int",
+                      "description": "Indicators that never reached Microsoft Sentinel and will be fetched again"
+                    },
+                    {
+                      "name": "IndicatorsRevoked",
+                      "type": "int",
+                      "description": "Revoked indicators uploaded to Microsoft Sentinel with the revoked flag"
+                    },
+                    {
+                      "name": "PagesFetched",
+                      "type": "int",
+                      "description": "TAXII pages fetched"
+                    },
+                    {
+                      "name": "DurationMs",
+                      "type": "int",
+                      "description": "Run duration in milliseconds"
+                    },
+                    {
+                      "name": "Status",
+                      "type": "string",
+                      "description": "Run status (Success, PartialSuccess, Failed)"
+                    },
+                    {
+                      "name": "ErrorMessage",
+                      "type": "string",
+                      "description": "Error details if any"
+                    }
+                  ]
+                },
+                "retentionInDays": 30,
+                "plan": "Analytics"
+              }
+            },
+            {
+              "condition": "[[variables('isExternalWorkspace')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2021-04-01",
+              "name": "deploy-workspace-resources",
+              "resourceGroup": "[[parameters('WorkspaceResourceGroup')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                  "scope": "outer"
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0",
+                  "resources": [
+                    {
+                      "condition": "[[parameters('EnableAuditLogging')]",
+                      "type": "Microsoft.OperationalInsights/workspaces/tables",
+                      "apiVersion": "2022-10-01",
+                      "name": "[[concat(parameters('WorkspaceName'), '/', variables('AuditTableName'))]",
+                      "properties": {
+                        "schema": {
+                          "name": "[[variables('AuditTableName')]",
+                          "columns": [
+                            {
+                              "name": "TimeGenerated",
+                              "type": "datetime",
+                              "description": "Event timestamp"
+                            },
+                            {
+                              "name": "ApiRoot",
+                              "type": "string",
+                              "description": "TAXII API root name"
+                            },
+                            {
+                              "name": "CollectionId",
+                              "type": "string",
+                              "description": "TAXII collection UUID"
+                            },
+                            {
+                              "name": "IndicatorsCreated",
+                              "type": "int",
+                              "description": "Indicators successfully uploaded"
+                            },
+                            {
+                              "name": "IndicatorsSkipped",
+                              "type": "int",
+                              "description": "Indicators Microsoft Sentinel accepted the request for but rejected"
+                            },
+                            {
+                              "name": "IndicatorsFailed",
+                              "type": "int",
+                              "description": "Indicators that never reached Microsoft Sentinel and will be fetched again"
+                            },
+                            {
+                              "name": "IndicatorsRevoked",
+                              "type": "int",
+                              "description": "Revoked indicators uploaded to Microsoft Sentinel with the revoked flag"
+                            },
+                            {
+                              "name": "PagesFetched",
+                              "type": "int",
+                              "description": "TAXII pages fetched"
+                            },
+                            {
+                              "name": "DurationMs",
+                              "type": "int",
+                              "description": "Run duration in milliseconds"
+                            },
+                            {
+                              "name": "Status",
+                              "type": "string",
+                              "description": "Run status (Success, PartialSuccess, Failed)"
+                            },
+                            {
+                              "name": "ErrorMessage",
+                              "type": "string",
+                              "description": "Error details if any"
+                            }
+                          ]
+                        },
+                        "retentionInDays": 30,
+                        "plan": "Analytics"
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "name": "[[guid(variables('workspaceResourceId'), variables('managedIdentityName'), variables('SentinelContributorRoleId'))]",
+                      "scope": "[[variables('workspaceResourceId')]",
+                      "properties": {
+                        "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('SentinelContributorRoleId'))]",
+                        "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2024-11-30').principalId]",
+                        "principalType": "ServicePrincipal"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "condition": "[[parameters('EnableAuditLogging')]",
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[[variables('AuditDcrName')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('DceName'))]",
+                "[[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('WorkspaceName'), variables('AuditTableName'))]",
+                "deploy-workspace-resources",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "kind": "Direct",
+              "properties": {
+                "description": "DCR for SOCRadar TAXII audit log ingestion",
+                "dataCollectionEndpointId": "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('DceName'))]",
+                "streamDeclarations": {
+                  "Custom-SOCRadar_TAXII_Audit_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "ApiRoot",
+                        "type": "string"
+                      },
+                      {
+                        "name": "CollectionId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "IndicatorsCreated",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsSkipped",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsFailed",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsRevoked",
+                        "type": "int"
+                      },
+                      {
+                        "name": "PagesFetched",
+                        "type": "int"
+                      },
+                      {
+                        "name": "DurationMs",
+                        "type": "int"
+                      },
+                      {
+                        "name": "Status",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ErrorMessage",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "workspaceResourceId": "[[variables('workspaceResourceId')]",
+                      "name": "workspace"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "[[variables('AuditStreamName')]"
+                    ],
+                    "destinations": [
+                      "workspace"
+                    ],
+                    "transformKql": "source",
+                    "outputStream": "[[variables('AuditStreamName')]"
+                  }
+                ]
+              }
+            },
+            {
+              "dependsOn": [
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2023-01-31",
+              "name": "[[variables('managedIdentityName')]",
+              "location": "[[variables('workspace-location-inline')]"
+            },
+            {
+              "dependsOn": [
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2023-12-01",
+              "name": "[[variables('hostingPlanName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "sku": {
+                "name": "Y1",
+                "tier": "Dynamic"
+              },
+              "kind": "functionapp",
+              "properties": {
+                "reserved": true
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[[variables('appInsightsName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "kind": "web",
+              "dependsOn": [
+                "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[[variables('workspaceResourceId')]",
+                "RetentionInDays": 30
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2023-12-01",
+              "name": "[[variables('functionAppName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "kind": "functionapp,linux",
+              "identity": "[[createObject('type', 'UserAssigned', 'userAssignedIdentities', createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), createObject()))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+                "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+                "[[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                "[[resourceId('Microsoft.Storage/storageAccounts/tableServices/tables', variables('storageAccountName'), 'default', variables('tableName'))]",
+                "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('DceName'))]",
+                "[[resourceId('Microsoft.Insights/dataCollectionRules', variables('AuditDcrName'))]",
+                "[[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "serverFarmId": "[[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+                "httpsOnly": true,
+                "siteConfig": {
+                  "linuxFxVersion": "Python|3.11",
+                  "appSettings": [
+                    {
+                      "name": "AzureWebJobsStorage",
+                      "value": "[[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2025-01-01').keys[0].value, ';EndpointSuffix=core.windows.net')]"
+                    },
+                    {
+                      "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                      "value": "[[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2025-01-01').keys[0].value, ';EndpointSuffix=core.windows.net')]"
+                    },
+                    {
+                      "name": "WEBSITE_CONTENTSHARE",
+                      "value": "[[variables('functionAppName')]"
+                    },
+                    {
+                      "name": "FUNCTIONS_EXTENSION_VERSION",
+                      "value": "~4"
+                    },
+                    {
+                      "name": "FUNCTIONS_WORKER_RUNTIME",
+                      "value": "python"
+                    },
+                    {
+                      "name": "AzureWebJobsFeatureFlags",
+                      "value": "EnableWorkerIndexing"
+                    },
+                    {
+                      "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                      "value": "[[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+                    },
+                    {
+                      "name": "WEBSITE_RUN_FROM_PACKAGE",
+                      "value": "1"
+                    },
+                    {
+                      "name": "AZURE_CLIENT_ID",
+                      "value": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2024-11-30').clientId]"
+                    },
+                    {
+                      "name": "POLLING_SCHEDULE",
+                      "value": "[[variables('pollingSchedule')]"
+                    },
+                    {
+                      "name": "API_ROOTS",
+                      "value": "[[parameters('ApiRoots')]"
+                    },
+                    {
+                      "name": "COLLECTION_IDS",
+                      "value": "[[parameters('CollectionIds')]"
+                    },
+                    {
+                      "name": "INITIAL_LOOKBACK_HOURS",
+                      "value": "[[parameters('InitialLookbackHours')]"
+                    },
+                    {
+                      "name": "TAXII_USERNAME",
+                      "value": "[[parameters('TAXIIUsername')]"
+                    },
+                    {
+                      "name": "TAXII_PASSWORD",
+                      "value": "[[parameters('TAXIIPassword')]"
+                    },
+                    {
+                      "name": "WORKSPACE_ID",
+                      "value": "[[reference(variables('workspaceResourceId'), '2023-09-01').customerId]"
+                    },
+                    {
+                      "name": "STORAGE_ACCOUNT_NAME",
+                      "value": "[[variables('storageAccountName')]"
+                    },
+                    {
+                      "name": "ENABLE_AUDIT_LOGGING",
+                      "value": "[[string(parameters('EnableAuditLogging'))]"
+                    },
+                    {
+                      "name": "AUDIT_DCR_ENDPOINT",
+                      "value": "[[if(parameters('EnableAuditLogging'), reference(resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('DceName')), '2024-03-11').logsIngestion.endpoint, '')]"
+                    },
+                    {
+                      "name": "AUDIT_DCR_IMMUTABLE_ID",
+                      "value": "[[if(parameters('EnableAuditLogging'), reference(resourceId('Microsoft.Insights/dataCollectionRules', variables('AuditDcrName')), '2024-03-11').immutableId, '')]"
+                    },
+                    {
+                      "name": "AUDIT_STREAM_NAME",
+                      "value": "[[variables('AuditStreamName')]"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "condition": "[[not(variables('isExternalWorkspace'))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(variables('workspaceResourceId'), variables('managedIdentityName'), variables('SentinelContributorRoleId'))]",
+              "scope": "[[variables('workspaceResourceId')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('SentinelContributorRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2024-11-30').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('managedIdentityName'), variables('StorageTableDataContributorRoleId'))]",
+              "scope": "[[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('StorageTableDataContributorRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2024-11-30').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "condition": "[[parameters('EnableAuditLogging')]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceId('Microsoft.Insights/dataCollectionRules', variables('AuditDcrName')), variables('managedIdentityName'), variables('MonitoringMetricsPublisherRoleId'))]",
+              "scope": "[[resourceId('Microsoft.Insights/dataCollectionRules', variables('AuditDcrName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.Insights/dataCollectionRules', variables('AuditDcrName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('MonitoringMetricsPublisherRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2024-11-30').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceId('Microsoft.Web/sites', variables('functionAppName')), variables('managedIdentityName'), variables('WebsiteContributorRoleId'))]",
+              "scope": "[[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('WebsiteContributorRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2024-11-30').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "condition": "[[parameters('EnableAuditLogging')]",
+              "type": "Microsoft.Insights/workbooks",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceGroup().id, 'SOCRadar-TAXII-Workbook')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "kind": "shared",
+              "dependsOn": [
+                "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "displayName": "SOCRadar TAXII 2.1 Dashboard",
+                "serializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"## SOCRadar TAXII 2.1 Dashboard\\nThreat intelligence indicator analytics from SOCRadar TAXII 2.1 feed imports.\"},\"name\":\"header\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Overview\"},\"name\":\"overview-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| summarize Count=dcount(Id)\\n| project Count\",\"size\":4,\"title\":\"Total TI Indicators\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"total-indicators\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| extend TagList = split(Tags, \\\",\\\")\\n| mv-expand Tag = TagList\\n| where tostring(Tag) startswith \\\"collection-\\\"\\n| summarize Count=dcount(tostring(Tag))\\n| project Count\",\"size\":4,\"title\":\"Active Sources\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"active-sources\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| summarize Count=dcount(ObservableKey)\\n| project Count\",\"size\":4,\"title\":\"Indicator Types\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"indicator-types\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| where TimeGenerated > ago(24h)\\n| summarize Count=dcount(Id)\\n| project Count\",\"size\":4,\"title\":\"Last 24 Hours\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"last-24h\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Indicator Analysis\"},\"name\":\"analysis-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| summarize Count=count() by ObservableKey\\n| order by Count desc\",\"size\":2,\"title\":\"Indicators by Type\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"customWidth\":\"50\",\"name\":\"indicators-by-type\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| extend TagList = split(Tags, \\\",\\\")\\n| mv-expand Tag = TagList\\n| where tostring(Tag) startswith \\\"collection-\\\"\\n| summarize Count=count() by tostring(Tag)\\n| order by Count desc\",\"size\":2,\"title\":\"Indicators by Source\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"customWidth\":\"50\",\"name\":\"indicators-by-source\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| summarize Count=count() by bin(TimeGenerated, 1h)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Indicators Over Time\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"timechart\"},\"name\":\"indicators-timeline\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"ThreatIntelIndicators\\n| where SourceSystem == \\\"SOCRadar TAXII\\\"\\n| project TimeGenerated, ObservableKey, ObservableValue, Confidence, ValidFrom, ValidUntil\\n| order by TimeGenerated desc\\n| take 50\",\"size\":0,\"title\":\"Recent Indicators\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"recent-indicators\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Audit Monitoring\"},\"name\":\"audit-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_TAXII_Audit_CL\\n| summarize Count=count() by Status\\n| order by Count desc\",\"size\":2,\"title\":\"Import Run Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"customWidth\":\"50\",\"name\":\"audit-status\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_TAXII_Audit_CL\\n| summarize Created=sum(IndicatorsCreated), Failed=sum(IndicatorsFailed), Revoked=sum(IndicatorsRevoked) by bin(TimeGenerated, 1h)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Indicators Created, Failed and Revoked\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"timechart\"},\"customWidth\":\"50\",\"name\":\"created-vs-revoked\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_TAXII_Audit_CL\\n| project TimeGenerated, ApiRoot, CollectionId, IndicatorsCreated, IndicatorsSkipped, IndicatorsFailed, IndicatorsRevoked, DurationMs, Status, ErrorMessage\\n| order by TimeGenerated desc\\n| take 20\",\"size\":0,\"title\":\"Recent Import Runs\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"recent-runs\"}],\"isLocked\":false,\"fallbackResourceIds\":[\"/subscriptions/{Subscription}/resourceGroups/{ResourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{Workspace}\"]}",
+                "version": "1.0",
+                "sourceId": "[[variables('workspaceResourceId')]",
+                "category": "sentinel"
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2020-10-01",
+              "name": "[[concat('triggerFirstRun-', uniqueString(resourceGroup().id))]",
+              "location": "[[variables('workspace-location-inline')]",
+              "kind": "AzureCLI",
+              "identity": "[[createObject('type', 'UserAssigned', 'userAssignedIdentities', createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), createObject()))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+                "[[guid(resourceId('Microsoft.Web/sites', variables('functionAppName')), variables('managedIdentityName'), variables('WebsiteContributorRoleId'))]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-workspace-exists')]",
+                "[[resourceId('Microsoft.Resources/deployments', 'precheck-external-workspace')]"
+              ],
+              "properties": {
+                "azCliVersion": "2.50.0",
+                "forceUpdateTag": "[[parameters('_packagePushTimestamp')]",
+                "retentionInterval": "PT26H",
+                "timeout": "PT30M",
+                "cleanupPreference": "OnSuccess",
+                "scriptContent": "set -e; code=$(curl -s -o /dev/null -w '%{http_code}' -L \"$PACKAGE_URL\"); [ \"$code\" = 200 ] || { echo \"package URL returned HTTP $code\"; exit 1; }; curl -sSL -o /tmp/package.zip \"$PACKAGE_URL\"; python3 -c \"import zipfile;zipfile.ZipFile('/tmp/package.zip').testzip()\" >/dev/null 2>&1 || { echo 'downloaded package is not a readable zip'; exit 1; }; echo \"package downloaded: $(stat -c%s /tmp/package.zip) bytes\"; echo 'reading the app storage connection while the role assignment propagates'; CONN=; for wait in $(seq 1 8); do CONN=$(az functionapp config appsettings list --name \"$FA_NAME\" --resource-group \"$RG_NAME\" --query \"[?name=='AzureWebJobsStorage'].value\" -o tsv 2>/dev/null || true); [ -n \"$CONN\" ] && break; echo \"attempt $wait: the app settings are not readable yet\"; sleep 15; done; [ -n \"$CONN\" ] || { echo 'the app settings stayed unreadable for two minutes: the Website Contributor assignment never became effective'; exit 1; }; SA=$(printf '%s' \"$CONN\" | sed -n 's/.*AccountName=\\([^;]*\\).*/\\1/p'); [ -n \"$SA\" ] || { echo 'the app storage connection carries no AccountName'; exit 1; }; echo \"staging the package in the app storage account $SA\"; pointer() { az functionapp config appsettings list --name \"$FA_NAME\" --resource-group \"$RG_NAME\" --query \"[?name=='WEBSITE_RUN_FROM_PACKAGE'].value\" -o tsv 2>/dev/null; }; shape() { case \"$(pointer)\" in *function-releases*) echo blob;; 1) echo one;; '') echo missing;; *) echo other;; esac; }; staged() { [ \"$(shape)\" = blob ]; }; count() { az rest --method get --url \"https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/$RG_NAME/providers/Microsoft.Web/sites/$FA_NAME/functions?api-version=2023-12-01\" --query 'length(value)' -o tsv 2>/dev/null || echo 0; }; indexed() { n=$(count); case \"$n\" in ''|*[!0-9]*) return 1;; esac; [ \"$n\" -ge 1 ]; }; BLOB=package-$(date -u +%Y%m%d%H%M%S).zip; for attempt in $(seq 1 6); do az storage container create --name function-releases --connection-string \"$CONN\" -o none >/dev/null 2>&1 || true; if az storage blob upload --container-name function-releases --name \"$BLOB\" --file /tmp/package.zip --overwrite --connection-string \"$CONN\" -o none >/dev/null 2>&1; then SAS=$(az storage blob generate-sas --container-name function-releases --name \"$BLOB\" --permissions r --expiry 2099-12-31T00:00:00Z --connection-string \"$CONN\" -o tsv 2>/dev/null); { [ -n \"$SAS\" ] && az functionapp config appsettings set --name \"$FA_NAME\" --resource-group \"$RG_NAME\" --settings \"WEBSITE_RUN_FROM_PACKAGE=https://$SA.blob.core.windows.net/function-releases/$BLOB?$SAS\" -o none >/dev/null 2>&1; } || echo \"attempt $attempt: no read token was issued for the staged package\"; else echo \"attempt $attempt: the package upload failed; the readings decide\"; fi; echo \"attempt $attempt: pointer=$(shape) functions=$(count)\"; staged && break; sleep 30; done; staged || { echo 'the package pointer never became a blob under function-releases: the app would have no code to reload'; exit 1; }; echo 'restarting the app so the host reloads the staged package'; az functionapp restart --name \"$FA_NAME\" --resource-group \"$RG_NAME\" -o none >/dev/null 2>&1 || echo 'the restart call did not go through; the readings decide'; for i in $(seq 1 40); do sleep 15; indexed && { echo \"$(count) function(s) indexed after $((i * 15))s; run_on_startup triggers the first import\"; exit 0; }; done; echo 'the package is staged but no function was indexed in 10 minutes'; exit 1",
+                "environmentVariables": [
+                  {
+                    "name": "FA_NAME",
+                    "value": "[[variables('functionAppName')]"
+                  },
+                  {
+                    "name": "RG_NAME",
+                    "value": "[[resourceGroup().name]"
+                  },
+                  {
+                    "name": "SUB_ID",
+                    "value": "[[subscription().subscriptionId]"
+                  },
+                  {
+                    "name": "PACKAGE_URL",
+                    "value": "[[parameters('PackageUri')]"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[[concat(variables('workspace-name'),'/Microsoft.SecurityInsights/',concat('AzureFunction-', last(split(variables('playbookId1'),'/'))))]",
+              "properties": {
+                "parentId": "[[variables('playbookId1')]",
+                "contentId": "[variables('_playbookContentId1')]",
+                "kind": "AzureFunction",
+                "version": "[variables('playbookVersion1')]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadarTAXII",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ],
+          "metadata": {
+            "title": "SOCRadar TAXII 2.1 for Microsoft Sentinel",
+            "description": "Imports STIX 2.1 threat intelligence indicators from SOCRadar TAXII server into Microsoft Sentinel using Azure Functions. Supports multiple collections, cursor-based pagination, checkpoint/resume, and batch upload.",
+            "version": "1.0.0",
+            "lastUpdateTime": "2026-10-01T00:00:00Z",
+            "releaseNotes": {
+              "version": "1.0",
+              "title": "[variables('blanks')]",
+              "notes": [
+                "Initial version"
+              ]
+            }
+          }
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('_playbookContentId1')]",
+        "contentKind": "AzureFunction",
+        "displayName": "SOCRadar-TAXII-FunctionApp",
+        "contentProductId": "[variables('_playbookcontentProductId1')]",
+        "id": "[variables('_playbookcontentProductId1')]",
+        "version": "[variables('playbookVersion1')]"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('playbookTemplateSpecName2')]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-TAXII-Infrastructure Playbook with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('playbookVersion2')]",
+          "parameters": {
+            "WorkspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Microsoft Sentinel Log Analytics Workspace Name"
+              }
+            },
+            "WorkspaceLocation": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location of the Log Analytics Workspace"
+              }
+            },
+            "RetentionDays": {
+              "type": "int",
+              "defaultValue": 30,
+              "minValue": 7,
+              "maxValue": 730,
+              "metadata": {
+                "description": "Retention period in days for the audit table"
+              }
+            }
+          },
+          "variables": {
+            "DceName": "SOCRadar-TAXII-DCE",
+            "AuditTableName": "SOCRadar_TAXII_Audit_CL",
+            "AuditDcrName": "SOCRadar-TAXII-Audit-DCR",
+            "AuditStreamName": "Custom-SOCRadar_TAXII_Audit_CL",
+            "workspace-location-inline": "[concat('[resourceGroup().locatio', 'n]')]",
+            "workspace-name": "[parameters('workspace')]",
+            "workspaceResourceId": "[[resourceId('microsoft.OperationalInsights/Workspaces', variables('workspace-name'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/dataCollectionEndpoints",
+              "apiVersion": "2023-03-11",
+              "name": "[[variables('DceName')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "properties": {
+                "description": "Data Collection Endpoint for SOCRadar TAXII audit logging",
+                "networkAcls": {
+                  "publicNetworkAccess": "Enabled"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[[concat(parameters('WorkspaceName'), '/', variables('AuditTableName'))]",
+              "properties": {
+                "schema": {
+                  "name": "[[variables('AuditTableName')]",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime",
+                      "description": "Event timestamp"
+                    },
+                    {
+                      "name": "ApiRoot",
+                      "type": "string",
+                      "description": "TAXII API root name"
+                    },
+                    {
+                      "name": "CollectionId",
+                      "type": "string",
+                      "description": "TAXII collection UUID"
+                    },
+                    {
+                      "name": "IndicatorsCreated",
+                      "type": "int",
+                      "description": "Indicators successfully uploaded"
+                    },
+                    {
+                      "name": "IndicatorsSkipped",
+                      "type": "int",
+                      "description": "Indicators Microsoft Sentinel accepted the request for but rejected"
+                    },
+                    {
+                      "name": "IndicatorsFailed",
+                      "type": "int",
+                      "description": "Indicators that never reached Microsoft Sentinel and will be fetched again"
+                    },
+                    {
+                      "name": "IndicatorsRevoked",
+                      "type": "int",
+                      "description": "Revoked indicators uploaded to Microsoft Sentinel with the revoked flag"
+                    },
+                    {
+                      "name": "PagesFetched",
+                      "type": "int",
+                      "description": "TAXII pages fetched"
+                    },
+                    {
+                      "name": "DurationMs",
+                      "type": "int",
+                      "description": "Run duration in milliseconds"
+                    },
+                    {
+                      "name": "Status",
+                      "type": "string",
+                      "description": "Run status (Success, PartialSuccess, Failed)"
+                    },
+                    {
+                      "name": "ErrorMessage",
+                      "type": "string",
+                      "description": "Error details if any"
+                    }
+                  ]
+                },
+                "retentionInDays": "[[parameters('RetentionDays')]",
+                "plan": "Analytics"
+              }
+            },
+            {
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[[variables('AuditDcrName')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "kind": "Direct",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('DceName'))]",
+                "[[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('WorkspaceName'), variables('AuditTableName'))]"
+              ],
+              "properties": {
+                "description": "DCR for SOCRadar TAXII audit log ingestion",
+                "dataCollectionEndpointId": "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('DceName'))]",
+                "streamDeclarations": {
+                  "Custom-SOCRadar_TAXII_Audit_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "ApiRoot",
+                        "type": "string"
+                      },
+                      {
+                        "name": "CollectionId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "IndicatorsCreated",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsSkipped",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsFailed",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsRevoked",
+                        "type": "int"
+                      },
+                      {
+                        "name": "PagesFetched",
+                        "type": "int"
+                      },
+                      {
+                        "name": "DurationMs",
+                        "type": "int"
+                      },
+                      {
+                        "name": "Status",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ErrorMessage",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "workspaceResourceId": "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+                      "name": "workspace"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "[[variables('AuditStreamName')]"
+                    ],
+                    "destinations": [
+                      "workspace"
+                    ],
+                    "transformKql": "source",
+                    "outputStream": "[[variables('AuditStreamName')]"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('Playbook-', last(split(variables('playbookId2'),'/'))))]",
+              "properties": {
+                "parentId": "[variables('playbookId2')]",
+                "contentId": "[variables('_playbookContentId2')]",
+                "kind": "Playbook",
+                "version": "[variables('playbookVersion2')]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadarTAXII",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ],
+          "metadata": {
+            "title": "SOCRadar-TAXII-Infrastructure",
+            "description": "Creates custom log table and data collection infrastructure for SOCRadar TAXII 2.1 audit logging in Microsoft Sentinel.",
+            "version": "1.0.0",
+            "lastUpdateTime": "2026-10-01T00:00:00Z",
+            "releaseNotes": {
+              "version": "1.0",
+              "title": "[variables('blanks')]",
+              "notes": [
+                "Initial version"
+              ]
+            }
+          }
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('_playbookContentId2')]",
+        "contentKind": "Playbook",
+        "displayName": "SOCRadar-TAXII-Infrastructure",
+        "contentProductId": "[variables('_playbookcontentProductId2')]",
+        "id": "[variables('_playbookcontentProductId2')]",
+        "version": "[variables('playbookVersion2')]"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentPackages",
+      "apiVersion": "2023-04-01-preview",
+      "location": "[parameters('workspace-location')]",
+      "properties": {
+        "version": "3.0.0",
+        "kind": "Solution",
+        "contentSchemaVersion": "3.0.0",
+        "displayName": "SOCRadarTAXII",
+        "publisherDisplayName": "SOCRadar",
+        "descriptionHtml": "<p><strong>Note:</strong> Please refer to the following before installing the solution:</p>\n<p>• Review the solution <a href=\"https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/SOCRadarTAXII/ReleaseNotes.md\">Release Notes</a></p>\n<p>• There may be <a href=\"https://aka.ms/sentinelsolutionsknownissues\">known issues</a> pertaining to this Solution, please refer to them before installing.</p>\n<p>The <a href=\"https://socradar.io/\">SOCRadar</a> TAXII 2.1 solution for Microsoft Sentinel imports threat intelligence indicators from SOCRadar TAXII server using an Azure Function App. Supports multiple collections, cursor-based pagination, checkpoint/resume, and batch upload to Microsoft Sentinel TI.</p>\n<p><strong>Workbooks:</strong> 1, <strong>Analytic Rules:</strong> 1, <strong>Hunting Queries:</strong> 2, <strong>Function Apps:</strong> 1, <strong>Playbooks:</strong> 1</p>\n<p><a href=\"https://aka.ms/azuresentinel\">Learn more about Microsoft Sentinel</a> | <a href=\"https://aka.ms/azuresentinelsolutionsdoc\">Learn more about Solutions</a></p>\n",
+        "contentKind": "Solution",
+        "contentProductId": "[variables('_solutioncontentProductId')]",
+        "id": "[variables('_solutioncontentProductId')]",
+        "icon": "<img src=\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/socradar.svg\" width=\"75px\" height=\"75px\">",
+        "contentId": "[variables('_solutionId')]",
+        "parentId": "[variables('_solutionId')]",
+        "source": {
+          "kind": "Solution",
+          "name": "SOCRadarTAXII",
+          "sourceId": "[variables('_solutionId')]"
+        },
+        "author": {
+          "name": "SOCRadar",
+          "email": "[variables('_email')]"
+        },
+        "support": {
+          "name": "SOCRadar",
+          "email": "integration@socradar.io",
+          "tier": "Partner",
+          "link": "https://socradar.io/support"
+        },
+        "dependencies": {
+          "operator": "AND",
+          "criteria": [
+            {
+              "kind": "Workbook",
+              "contentId": "[variables('_workbookContentId1')]",
+              "version": "[variables('workbookVersion1')]"
+            },
+            {
+              "kind": "HuntingQuery",
+              "contentId": "[variables('huntingQueryObject1')._huntingQuerycontentId1]",
+              "version": "[variables('huntingQueryObject1').huntingQueryVersion1]"
+            },
+            {
+              "kind": "HuntingQuery",
+              "contentId": "[variables('huntingQueryObject2')._huntingQuerycontentId2]",
+              "version": "[variables('huntingQueryObject2').huntingQueryVersion2]"
+            },
+            {
+              "kind": "AnalyticsRule",
+              "contentId": "[variables('analyticRuleObject1')._analyticRulecontentId1]",
+              "version": "[variables('analyticRuleObject1').analyticRuleVersion1]"
+            },
+            {
+              "kind": "AzureFunction",
+              "contentId": "[variables('_SOCRadar-TAXII-FunctionApp')]",
+              "version": "[variables('playbookVersion1')]"
+            },
+            {
+              "kind": "Playbook",
+              "contentId": "[variables('_SOCRadar-TAXII-Infrastructure')]",
+              "version": "[variables('playbookVersion2')]"
+            }
+          ]
+        },
+        "firstPublishDate": "2026-02-21",
+        "lastPublishDate": "2026-02-21",
+        "providers": [
+          "SOCRadar"
+        ],
+        "categories": {
+          "domains": [
+            "Security - Threat Intelligence",
+            "Security - Threat Protection"
+          ]
+        }
+      },
+      "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/', variables('_solutionId'))]"
+    }
+  ],
+  "outputs": {}
+}
