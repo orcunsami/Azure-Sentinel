@@ -1,0 +1,211 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "config": {
+      "isWizard": false,
+      "basics": {
+        "description": "<img src=\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/socradar.svg\" width=\"75px\" height=\"75px\">\n\n**Note:** Please refer to the following before installing the solution: \n\n• Review the solution [Release Notes](https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/SOCRadar%20Threat%20Feeds/ReleaseNotes.md)\n\n • There may be [known issues](https://aka.ms/sentinelsolutionsknownissues) pertaining to this Solution, please refer to them before installing.\n\nThe [SOCRadar](https://socradar.io/) Threat Feeds solution for Microsoft Sentinel imports threat intelligence indicators from SOCRadar feed collections into Microsoft Sentinel using an Azure Function App. Supports recommended and custom feed collections with batch upload, checkpoint-based deduplication, and optional custom table logging.\n\n**Workbooks:** 1, **Hunting Queries:** 4, **Function Apps:** 1, **Playbooks:** 1\n\n[Learn more about Microsoft Sentinel](https://aka.ms/azuresentinel) | [Learn more about Solutions](https://aka.ms/azuresentinelsolutionsdoc)",
+        "subscription": {
+          "resourceProviders": [
+            "Microsoft.OperationsManagement/solutions",
+            "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+            "Microsoft.Insights/workbooks",
+            "Microsoft.Logic/workflows"
+          ]
+        },
+        "location": {
+          "metadata": {
+            "hidden": "Hiding location, we get it from the log analytics workspace"
+          },
+          "visible": false
+        },
+        "resourceGroup": {
+          "allowExisting": true
+        }
+      }
+    },
+    "basics": [
+      {
+        "name": "getLAWorkspace",
+        "type": "Microsoft.Solutions.ArmApiControl",
+        "toolTip": "This filters by workspaces that exist in the Resource Group selected",
+        "condition": "[greater(length(resourceGroup().name),0)]",
+        "request": {
+          "method": "GET",
+          "path": "[concat(subscription().id,'/providers/Microsoft.OperationalInsights/workspaces?api-version=2020-08-01')]"
+        }
+      },
+      {
+        "name": "workspace",
+        "type": "Microsoft.Common.DropDown",
+        "label": "Workspace",
+        "placeholder": "Select a workspace",
+        "toolTip": "This dropdown will list only workspace that exists in the Resource Group selected",
+        "constraints": {
+          "allowedValues": "[map(filter(basics('getLAWorkspace').value, (filter) => contains(toLower(filter.id), toLower(resourceGroup().name))), (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]",
+          "required": true
+        },
+        "visible": true
+      }
+    ],
+    "steps": [
+      {
+        "name": "workbooks",
+        "label": "Workbooks",
+        "subLabel": {
+          "preValidation": "Configure the workbooks",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "Workbooks",
+        "elements": [
+          {
+            "name": "workbooks-text",
+            "type": "Microsoft.Common.TextBlock",
+            "options": {
+              "text": "This solution installs a workbook to visualize SOCRadar threat feed indicators and audit operations."
+            }
+          },
+          {
+            "name": "workbooks-link",
+            "type": "Microsoft.Common.TextBlock",
+            "options": {
+              "link": {
+                "label": "Learn more",
+                "uri": "https://docs.microsoft.com/azure/sentinel/tutorial-monitor-your-data"
+              }
+            }
+          },
+          {
+            "name": "workbook1",
+            "type": "Microsoft.Common.Section",
+            "label": "SOCRadar Threat Feeds Dashboard",
+            "elements": [
+              {
+                "name": "workbook1-text",
+                "type": "Microsoft.Common.TextBlock",
+                "options": {
+                  "text": "Gain insights into SOCRadar threat feed indicators imported into Microsoft Sentinel. View indicator counts by type and collection, the import timeline and the audit log."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "huntingqueries",
+        "label": "Hunting Queries",
+        "bladeTitle": "Hunting Queries",
+        "elements": [
+          {
+            "name": "huntingqueries-text",
+            "type": "Microsoft.Common.TextBlock",
+            "options": {
+              "text": "This solution installs hunting queries to analyze SOCRadar threat feed indicators in Microsoft Sentinel."
+            }
+          },
+          {
+            "name": "huntingqueries-link",
+            "type": "Microsoft.Common.TextBlock",
+            "options": {
+              "link": {
+                "label": "Learn more",
+                "uri": "https://docs.microsoft.com/azure/sentinel/hunting"
+              }
+            }
+          },
+          {
+            "name": "huntingquery1",
+            "type": "Microsoft.Common.Section",
+            "label": "SOCRadar Feeds - Indicator Overview",
+            "elements": [
+              {
+                "name": "huntingquery1-text",
+                "type": "Microsoft.Common.TextBlock",
+                "options": {
+                  "text": "Overview of all threat intelligence indicators imported from SOCRadar feeds, grouped by collection and type. This hunting query depends on CustomLogsAma data connector (SOCRadar_Feeds_CL Parser or Table)"
+                }
+              }
+            ]
+          },
+          {
+            "name": "huntingquery2",
+            "type": "Microsoft.Common.Section",
+            "label": "SOCRadar Feeds - Top Indicators",
+            "elements": [
+              {
+                "name": "huntingquery2-text",
+                "type": "Microsoft.Common.TextBlock",
+                "options": {
+                  "text": "Most frequently seen threat indicators from SOCRadar feeds. Useful for identifying persistent threats. This hunting query depends on CustomLogsAma data connector (SOCRadar_Feeds_CL Parser or Table)"
+                }
+              }
+            ]
+          },
+          {
+            "name": "huntingquery3",
+            "type": "Microsoft.Common.Section",
+            "label": "SOCRadar Feeds - Collection Statistics",
+            "elements": [
+              {
+                "name": "huntingquery3-text",
+                "type": "Microsoft.Common.TextBlock",
+                "options": {
+                  "text": "Daily import statistics per feed collection. Monitors feed health and volume trends. This hunting query depends on CustomLogsAma data connector (SOCRadar_Feeds_CL Parser or Table)"
+                }
+              }
+            ]
+          },
+          {
+            "name": "huntingquery4",
+            "type": "Microsoft.Common.Section",
+            "label": "SOCRadar Feeds - Audit Analysis",
+            "elements": [
+              {
+                "name": "huntingquery4-text",
+                "type": "Microsoft.Common.TextBlock",
+                "options": {
+                  "text": "Analyzes feed import operations from the audit log. Shows failed and partial runs and the indicators that did not reach Microsoft Sentinel. This hunting query depends on CustomLogsAma data connector (SOCRadar_Feeds_Audit_CL Parser or Table)"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "playbooks",
+        "label": "Playbooks",
+        "subLabel": {
+          "preValidation": "Configure the playbooks",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "Playbooks",
+        "elements": [
+          {
+            "name": "playbooks-text",
+            "type": "Microsoft.Common.TextBlock",
+            "options": {
+              "text": "This solution installs an Azure Function App for threat feed import and data collection infrastructure for Microsoft Sentinel."
+            }
+          },
+          {
+            "name": "playbooks-link",
+            "type": "Microsoft.Common.TextBlock",
+            "options": {
+              "link": {
+                "label": "Learn more",
+                "uri": "https://docs.microsoft.com/azure/sentinel/tutorial-respond-threats-playbook?WT.mc_id=Portal-Microsoft_Azure_CreateUIDef"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "workspace-location": "[first(map(filter(basics('getLAWorkspace').value, (filter) => and(contains(toLower(filter.id), toLower(resourceGroup().name)),equals(filter.name,basics('workspace')))), (item) => item.location))]",
+      "location": "[location()]",
+      "workspace": "[basics('workspace')]"
+    }
+  }
+}

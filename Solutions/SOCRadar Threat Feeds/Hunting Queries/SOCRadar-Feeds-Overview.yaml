@@ -1,0 +1,15 @@
+id: f2a1b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c
+name: SOCRadar Feeds - Indicator Overview
+description: Overview of all threat intelligence indicators imported from SOCRadar feeds, grouped by collection and type.
+requiredDataConnectors:
+  - connectorId: CustomLogsAma
+    dataTypes:
+      - SOCRadar_Feeds_CL
+tactics:
+  - Collection
+relevantTechniques:
+  - T1119
+query: |
+  SOCRadar_Feeds_CL
+  | summarize IndicatorCount=dcount(IndicatorValue), LastSeen=max(TimeGenerated) by CollectionName, IndicatorType
+  | order by IndicatorCount desc

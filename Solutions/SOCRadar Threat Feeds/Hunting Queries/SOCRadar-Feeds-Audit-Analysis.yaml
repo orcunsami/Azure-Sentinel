@@ -1,0 +1,25 @@
+id: c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f
+name: SOCRadar Feeds - Audit Analysis
+description: Analyzes feed import operations from the audit log. Shows failed and partial runs and the indicators that did not reach Microsoft Sentinel.
+requiredDataConnectors:
+  - connectorId: CustomLogsAma
+    dataTypes:
+      - SOCRadar_Feeds_Audit_CL
+tactics:
+  - Collection
+relevantTechniques:
+  - T1119
+query: |
+  SOCRadar_Feeds_Audit_CL
+  | where TimeGenerated > ago(7d)
+  | summarize
+      TotalRuns=count(),
+      TotalCreated=sum(IndicatorsCreated),
+      TotalSkipped=sum(IndicatorsSkipped),
+      TotalFailed=sum(IndicatorsFailed),
+      AvgDurationMs=avg(DurationMs),
+      Failures=countif(Status == "Failed"),
+      PartialRuns=countif(Status == "PartialSuccess"),
+      LastRun=max(TimeGenerated)
+    by bin(TimeGenerated, 1d)
+  | order by TimeGenerated desc

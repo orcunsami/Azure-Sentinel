@@ -1,0 +1,34 @@
+{
+  "Name": "SOCRadar Threat Feeds",
+  "Author": "SOCRadar - integration@socradar.io",
+  "Logo": "<img src=\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/socradar.svg\" width=\"75px\" height=\"75px\">",
+  "Description": "The [SOCRadar](https://socradar.io/) Threat Feeds solution for Microsoft Sentinel imports threat intelligence indicators from SOCRadar feed collections into Microsoft Sentinel using an Azure Function App. Supports recommended and custom feed collections with batch upload, checkpoint-based deduplication, and optional custom table logging.",
+  "WorkbookBladeDescription": "This solution installs a workbook to visualize SOCRadar threat feed indicators and audit operations.",
+  "HuntingQueryBladeDescription": "This solution installs hunting queries to analyze SOCRadar threat feed indicators in Microsoft Sentinel.",
+  "PlaybooksBladeDescription": "This solution installs an Azure Function App for threat feed import and data collection infrastructure for Microsoft Sentinel.",
+  "Workbooks": [
+    "Workbooks/SOCRadar-Feeds-Dashboard.json"
+  ],
+  "WorkbookDescription": [
+    "SOCRadar Threat Feeds Dashboard provides visibility into imported threat indicators, collection statistics, and audit logs."
+  ],
+  "Hunting Queries": [
+    "Hunting Queries/SOCRadar-Feeds-Overview.yaml",
+    "Hunting Queries/SOCRadar-Feeds-Top-Indicators.yaml",
+    "Hunting Queries/SOCRadar-Feeds-Collection-Stats.yaml",
+    "Hunting Queries/SOCRadar-Feeds-Audit-Analysis.yaml"
+  ],
+  "Playbooks": [
+    "Playbooks/SOCRadar-Feeds-FunctionApp/azuredeploy.json",
+    "Playbooks/SOCRadar-Feeds-Infrastructure/azuredeploy.json"
+  ],
+  "PlaybookDescription": [
+    "Deploys an Azure Function App that imports threat intelligence indicators from SOCRadar feed collections into Microsoft Sentinel TI with batch upload and checkpoint-based deduplication.",
+    "Creates SOCRadar_Feeds_CL and SOCRadar_Feeds_Audit_CL custom tables with data collection infrastructure and optional analytics workbook."
+  ],
+  "BasePath": "C:\\GitHub\\Azure-Sentinel\\Solutions\\SOCRadar Threat Feeds",
+  "Version": "3.0.0",
+  "Metadata": "SolutionMetadata.json",
+  "TemplateSpec": true,
+  "Is1Pconnector": false
+}

@@ -1,0 +1,20 @@
+id: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+name: SOCRadar Feeds - Top Indicators
+description: Most frequently seen threat indicators from SOCRadar feeds. Useful for identifying persistent threats.
+requiredDataConnectors:
+  - connectorId: CustomLogsAma
+    dataTypes:
+      - SOCRadar_Feeds_CL
+tactics:
+  - CommandAndControl
+  - InitialAccess
+relevantTechniques:
+  - T1071
+  - T1566
+query: |
+  SOCRadar_Feeds_CL
+  | where TimeGenerated > ago(7d)
+  | summarize SeenCount=count(), Collections=dcount(CollectionName) by IndicatorValue, IndicatorType
+  | where SeenCount > 1
+  | order by SeenCount desc
+  | take 100

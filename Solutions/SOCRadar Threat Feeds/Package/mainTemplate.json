@@ -1,0 +1,1515 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "author": "SOCRadar - integration@socradar.io",
+    "comments": "Solution template for SOCRadar Threat Feeds"
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Not used, but needed to pass arm-ttk test `Location-Should-Not-Be-Hardcoded`.  We instead use the `workspace-location` which is derived from the LA workspace"
+      }
+    },
+    "workspace-location": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "[concat('Region to deploy solution resources -- separate from location selection',parameters('location'))]"
+      }
+    },
+    "workspace": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Workspace name for Log Analytics where Microsoft Sentinel is setup"
+      }
+    },
+    "workbook1-name": {
+      "type": "string",
+      "defaultValue": "SOCRadar Threat Feeds Dashboard",
+      "minLength": 1,
+      "metadata": {
+        "description": "Name for the workbook"
+      }
+    }
+  },
+  "variables": {
+    "email": "integration@socradar.io",
+    "_email": "[variables('email')]",
+    "_solutionName": "SOCRadar Threat Feeds",
+    "_solutionVersion": "3.0.0",
+    "solutionId": "socradar.azure-sentinel-solution-socradar-feeds",
+    "_solutionId": "[variables('solutionId')]",
+    "workbookVersion1": "1.0.0",
+    "workbookContentId1": "SOCRadarFeedsDashboard",
+    "workbookId1": "[resourceId('Microsoft.Insights/workbooks', variables('workbookContentId1'))]",
+    "workbookTemplateSpecName1": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-wb-',uniquestring(variables('_workbookContentId1'))))]",
+    "_workbookContentId1": "[variables('workbookContentId1')]",
+    "workspaceResourceId": "[resourceId('microsoft.OperationalInsights/Workspaces', parameters('workspace'))]",
+    "_workbookcontentProductId1": "[concat(take(variables('_solutionId'),50),'-','wb','-', uniqueString(concat(variables('_solutionId'),'-','Workbook','-',variables('_workbookContentId1'),'-', variables('workbookVersion1'))))]",
+    "huntingQueryObject1": {
+      "huntingQueryVersion1": "1.0.0",
+      "_huntingQuerycontentId1": "f2a1b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c",
+      "huntingQueryTemplateSpecName1": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('f2a1b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c')))]"
+    },
+    "huntingQueryObject2": {
+      "huntingQueryVersion2": "1.0.0",
+      "_huntingQuerycontentId2": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "huntingQueryTemplateSpecName2": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d')))]"
+    },
+    "huntingQueryObject3": {
+      "huntingQueryVersion3": "1.0.0",
+      "_huntingQuerycontentId3": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "huntingQueryTemplateSpecName3": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e')))]"
+    },
+    "huntingQueryObject4": {
+      "huntingQueryVersion4": "1.0.0",
+      "_huntingQuerycontentId4": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+      "huntingQueryTemplateSpecName4": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-hq-',uniquestring('c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f')))]"
+    },
+    "SOCRadar-Feeds-FunctionApp": "SOCRadar-Feeds-FunctionApp",
+    "_SOCRadar-Feeds-FunctionApp": "[variables('SOCRadar-Feeds-FunctionApp')]",
+    "playbookVersion1": "1.0",
+    "playbookContentId1": "SOCRadar-Feeds-FunctionApp",
+    "_playbookContentId1": "[variables('playbookContentId1')]",
+    "playbookTemplateSpecName1": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-fa-',uniquestring(variables('_playbookContentId1'))))]",
+    "_playbookcontentProductId1": "[concat(take(variables('_solutionId'),50),'-','fa','-', uniqueString(concat(variables('_solutionId'),'-','AzureFunction','-',variables('_playbookContentId1'),'-', variables('playbookVersion1'))))]",
+    "blanks": "[replace('b', 'b', '')]",
+    "SOCRadar-Feeds-Infrastructure": "SOCRadar-Feeds-Infrastructure",
+    "_SOCRadar-Feeds-Infrastructure": "[variables('SOCRadar-Feeds-Infrastructure')]",
+    "TemplateEmptyArray": "[json('[]')]",
+    "playbookVersion2": "1.0",
+    "playbookContentId2": "SOCRadar-Feeds-Infrastructure",
+    "_playbookContentId2": "[variables('playbookContentId2')]",
+    "playbookId2": "[resourceId('Microsoft.Logic/workflows', variables('playbookContentId2'))]",
+    "playbookTemplateSpecName2": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-pl-',uniquestring(variables('_playbookContentId2'))))]",
+    "_playbookcontentProductId2": "[concat(take(variables('_solutionId'),50),'-','pl','-', uniqueString(concat(variables('_solutionId'),'-','Playbook','-',variables('_playbookContentId2'),'-', variables('playbookVersion2'))))]",
+    "_solutioncontentProductId": "[concat(take(variables('_solutionId'),50),'-','sl','-', uniqueString(concat(variables('_solutionId'),'-','Solution','-',variables('_solutionId'),'-', variables('_solutionVersion'))))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('workbookTemplateSpecName1')]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-Feeds-Dashboard Workbook with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('workbookVersion1')]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.Insights/workbooks",
+              "name": "[variables('workbookContentId1')]",
+              "location": "[parameters('workspace-location')]",
+              "kind": "shared",
+              "apiVersion": "2021-08-01",
+              "metadata": {
+                "description": "Gain insights into SOCRadar threat feed indicators imported into Microsoft Sentinel. View indicator counts by type and collection, the import timeline and the audit log."
+              },
+              "properties": {
+                "displayName": "[parameters('workbook1-name')]",
+                "serializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"## SOCRadar Threat Feeds Dashboard\\nThreat intelligence indicator analytics from SOCRadar feeds.\"},\"name\":\"header\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Overview\"},\"name\":\"overview-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorValue)\\n| project Count\",\"size\":4,\"title\":\"Total Indicators\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"total-indicators\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(CollectionName)\\n| project Count\",\"size\":4,\"title\":\"Active Collections\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"active-collections\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorType)\\n| project Count\",\"size\":4,\"title\":\"Indicator Types\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"indicator-types\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| where TimeGenerated > ago(24h)\\n| summarize Count=dcount(IndicatorValue)\\n| project Count\",\"size\":4,\"title\":\"Last 24 Hours\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"last-24h\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Indicator Analysis\"},\"name\":\"analysis-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorValue) by IndicatorType\\n| order by Count desc\",\"size\":2,\"title\":\"Indicators by Type\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"customWidth\":\"50\",\"name\":\"indicators-by-type\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorValue) by CollectionName\\n| order by Count desc\",\"size\":2,\"title\":\"Indicators by Collection\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"customWidth\":\"50\",\"name\":\"indicators-by-collection\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=count() by bin(TimeGenerated, 1h)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Indicators Over Time\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"timechart\"},\"name\":\"indicators-timeline\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorValue) by CollectionName\\n| top 10 by Count desc\",\"size\":2,\"title\":\"Top 10 Collections\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"name\":\"top-collections\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| project TimeGenerated, CollectionName, IndicatorType, IndicatorValue, Source\\n| order by TimeGenerated desc\\n| take 50\",\"size\":0,\"title\":\"Recent Indicators\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"recent-indicators\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Audit Monitoring\"},\"name\":\"audit-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_Audit_CL\\n| summarize Count=count() by Status\\n| order by Count desc\",\"size\":2,\"title\":\"Import Run Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"customWidth\":\"50\",\"name\":\"audit-status\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_Audit_CL\\n| summarize Created=sum(IndicatorsCreated), Skipped=sum(IndicatorsSkipped) by bin(TimeGenerated, 1h)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Indicators Created vs Skipped\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"timechart\"},\"customWidth\":\"50\",\"name\":\"created-vs-skipped\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_Audit_CL\\n| project TimeGenerated, Status, CollectionsProcessed, IndicatorsCreated, IndicatorsSkipped, CollectionsFailed, IndicatorsFailed, DurationMs, ErrorMessage\\n| order by TimeGenerated desc\\n| take 20\",\"size\":0,\"title\":\"Recent Import Runs\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"recent-runs\"}],\"isLocked\":false,\"fallbackResourceIds\":[\"/subscriptions/{Subscription}/resourceGroups/{ResourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{Workspace}\"]}\n",
+                "version": "1.0",
+                "sourceId": "[variables('workspaceResourceId')]",
+                "category": "sentinel"
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('Workbook-', last(split(variables('workbookId1'),'/'))))]",
+              "properties": {
+                "description": "Gain insights into SOCRadar threat feed indicators imported into Microsoft Sentinel. View indicator counts by type and collection, the import timeline and the audit log.",
+                "parentId": "[variables('workbookId1')]",
+                "contentId": "[variables('_workbookContentId1')]",
+                "kind": "Workbook",
+                "version": "[variables('workbookVersion1')]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadar Threat Feeds",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                },
+                "dependencies": {
+                  "operator": "AND",
+                  "criteria": [
+                    {
+                      "contentId": "SOCRadar_Feeds_CL",
+                      "kind": "DataType"
+                    },
+                    {
+                      "contentId": "SOCRadar_Feeds_Audit_CL",
+                      "kind": "DataType"
+                    }
+                  ]
+                }
+              },
+              "description": "SOCRadar Threat Feeds Dashboard provides visibility into imported threat indicators, collection statistics, and audit logs."
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('_workbookContentId1')]",
+        "contentKind": "Workbook",
+        "displayName": "[parameters('workbook1-name')]",
+        "contentProductId": "[variables('_workbookcontentProductId1')]",
+        "id": "[variables('_workbookcontentProductId1')]",
+        "version": "[variables('workbookVersion1')]"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('huntingQueryObject1').huntingQueryTemplateSpecName1]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-Feeds-Overview_HuntingQueries Hunting Query with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('huntingQueryObject1').huntingQueryVersion1]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/savedSearches",
+              "apiVersion": "2025-07-01",
+              "name": "SOCRadar_Threat_Feeds_Hunting_Query_1",
+              "location": "[parameters('workspace-location')]",
+              "properties": {
+                "eTag": "*",
+                "displayName": "SOCRadar Feeds - Indicator Overview",
+                "category": "Hunting Queries",
+                "query": "SOCRadar_Feeds_CL\n| summarize IndicatorCount=dcount(IndicatorValue), LastSeen=max(TimeGenerated) by CollectionName, IndicatorType\n| order by IndicatorCount desc\n",
+                "version": 2,
+                "tags": [
+                  {
+                    "name": "description",
+                    "value": "Overview of all threat intelligence indicators imported from SOCRadar feeds, grouped by collection and type."
+                  },
+                  {
+                    "name": "tactics",
+                    "value": "Collection"
+                  },
+                  {
+                    "name": "techniques",
+                    "value": "T1119"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('HuntingQuery-', last(split(resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject1')._huntingQuerycontentId1),'/'))))]",
+              "properties": {
+                "description": "SOCRadar Threat Feeds Hunting Query 1",
+                "parentId": "[resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject1')._huntingQuerycontentId1)]",
+                "contentId": "[variables('huntingQueryObject1')._huntingQuerycontentId1]",
+                "kind": "HuntingQuery",
+                "version": "[variables('huntingQueryObject1').huntingQueryVersion1]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadar Threat Feeds",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('huntingQueryObject1')._huntingQuerycontentId1]",
+        "contentKind": "HuntingQuery",
+        "displayName": "SOCRadar Feeds - Indicator Overview",
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject1')._huntingQuerycontentId1,'-', '1.0.0')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject1')._huntingQuerycontentId1,'-', '1.0.0')))]",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('huntingQueryObject2').huntingQueryTemplateSpecName2]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-Feeds-Top-Indicators_HuntingQueries Hunting Query with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('huntingQueryObject2').huntingQueryVersion2]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/savedSearches",
+              "apiVersion": "2025-07-01",
+              "name": "SOCRadar_Threat_Feeds_Hunting_Query_2",
+              "location": "[parameters('workspace-location')]",
+              "properties": {
+                "eTag": "*",
+                "displayName": "SOCRadar Feeds - Top Indicators",
+                "category": "Hunting Queries",
+                "query": "SOCRadar_Feeds_CL\n| where TimeGenerated > ago(7d)\n| summarize SeenCount=count(), Collections=dcount(CollectionName) by IndicatorValue, IndicatorType\n| where SeenCount > 1\n| order by SeenCount desc\n| take 100\n",
+                "version": 2,
+                "tags": [
+                  {
+                    "name": "description",
+                    "value": "Most frequently seen threat indicators from SOCRadar feeds. Useful for identifying persistent threats."
+                  },
+                  {
+                    "name": "tactics",
+                    "value": "CommandAndControl,InitialAccess"
+                  },
+                  {
+                    "name": "techniques",
+                    "value": "T1071,T1566"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('HuntingQuery-', last(split(resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject2')._huntingQuerycontentId2),'/'))))]",
+              "properties": {
+                "description": "SOCRadar Threat Feeds Hunting Query 2",
+                "parentId": "[resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject2')._huntingQuerycontentId2)]",
+                "contentId": "[variables('huntingQueryObject2')._huntingQuerycontentId2]",
+                "kind": "HuntingQuery",
+                "version": "[variables('huntingQueryObject2').huntingQueryVersion2]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadar Threat Feeds",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('huntingQueryObject2')._huntingQuerycontentId2]",
+        "contentKind": "HuntingQuery",
+        "displayName": "SOCRadar Feeds - Top Indicators",
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject2')._huntingQuerycontentId2,'-', '1.0.0')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject2')._huntingQuerycontentId2,'-', '1.0.0')))]",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('huntingQueryObject3').huntingQueryTemplateSpecName3]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-Feeds-Collection-Stats_HuntingQueries Hunting Query with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('huntingQueryObject3').huntingQueryVersion3]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/savedSearches",
+              "apiVersion": "2025-07-01",
+              "name": "SOCRadar_Threat_Feeds_Hunting_Query_3",
+              "location": "[parameters('workspace-location')]",
+              "properties": {
+                "eTag": "*",
+                "displayName": "SOCRadar Feeds - Collection Statistics",
+                "category": "Hunting Queries",
+                "query": "SOCRadar_Feeds_CL\n| where TimeGenerated > ago(30d)\n| summarize DailyCount=dcount(IndicatorValue) by CollectionName, bin(TimeGenerated, 1d)\n| order by TimeGenerated desc, DailyCount desc\n",
+                "version": 2,
+                "tags": [
+                  {
+                    "name": "description",
+                    "value": "Daily import statistics per feed collection. Monitors feed health and volume trends."
+                  },
+                  {
+                    "name": "tactics",
+                    "value": "Collection"
+                  },
+                  {
+                    "name": "techniques",
+                    "value": "T1119"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('HuntingQuery-', last(split(resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject3')._huntingQuerycontentId3),'/'))))]",
+              "properties": {
+                "description": "SOCRadar Threat Feeds Hunting Query 3",
+                "parentId": "[resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject3')._huntingQuerycontentId3)]",
+                "contentId": "[variables('huntingQueryObject3')._huntingQuerycontentId3]",
+                "kind": "HuntingQuery",
+                "version": "[variables('huntingQueryObject3').huntingQueryVersion3]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadar Threat Feeds",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('huntingQueryObject3')._huntingQuerycontentId3]",
+        "contentKind": "HuntingQuery",
+        "displayName": "SOCRadar Feeds - Collection Statistics",
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject3')._huntingQuerycontentId3,'-', '1.0.0')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject3')._huntingQuerycontentId3,'-', '1.0.0')))]",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('huntingQueryObject4').huntingQueryTemplateSpecName4]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-Feeds-Audit-Analysis_HuntingQueries Hunting Query with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('huntingQueryObject4').huntingQueryVersion4]",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/savedSearches",
+              "apiVersion": "2025-07-01",
+              "name": "SOCRadar_Threat_Feeds_Hunting_Query_4",
+              "location": "[parameters('workspace-location')]",
+              "properties": {
+                "eTag": "*",
+                "displayName": "SOCRadar Feeds - Audit Analysis",
+                "category": "Hunting Queries",
+                "query": "SOCRadar_Feeds_Audit_CL\n| where TimeGenerated > ago(7d)\n| summarize\n    TotalRuns=count(),\n    TotalCreated=sum(IndicatorsCreated),\n    TotalSkipped=sum(IndicatorsSkipped),\n    TotalFailed=sum(IndicatorsFailed),\n    AvgDurationMs=avg(DurationMs),\n    Failures=countif(Status == \"Failed\"),\n    PartialRuns=countif(Status == \"PartialSuccess\"),\n    LastRun=max(TimeGenerated)\n  by bin(TimeGenerated, 1d)\n| order by TimeGenerated desc\n",
+                "version": 2,
+                "tags": [
+                  {
+                    "name": "description",
+                    "value": "Analyzes feed import operations from the audit log. Shows failed and partial runs and the indicators that did not reach Microsoft Sentinel."
+                  },
+                  {
+                    "name": "tactics",
+                    "value": "Collection"
+                  },
+                  {
+                    "name": "techniques",
+                    "value": "T1119"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('HuntingQuery-', last(split(resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject4')._huntingQuerycontentId4),'/'))))]",
+              "properties": {
+                "description": "SOCRadar Threat Feeds Hunting Query 4",
+                "parentId": "[resourceId('Microsoft.OperationalInsights/savedSearches', variables('huntingQueryObject4')._huntingQuerycontentId4)]",
+                "contentId": "[variables('huntingQueryObject4')._huntingQuerycontentId4]",
+                "kind": "HuntingQuery",
+                "version": "[variables('huntingQueryObject4').huntingQueryVersion4]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadar Threat Feeds",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ]
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('huntingQueryObject4')._huntingQuerycontentId4]",
+        "contentKind": "HuntingQuery",
+        "displayName": "SOCRadar Feeds - Audit Analysis",
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject4')._huntingQuerycontentId4,'-', '1.0.0')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','hq','-', uniqueString(concat(variables('_solutionId'),'-','HuntingQuery','-',variables('huntingQueryObject4')._huntingQuerycontentId4,'-', '1.0.0')))]",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('playbookTemplateSpecName1')]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-Feeds-FunctionApp Playbook with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('playbookVersion1')]",
+          "parameters": {
+            "WorkspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Existing Microsoft Sentinel Log Analytics Workspace Name"
+              }
+            },
+            "SocradarApiKey": {
+              "type": "securestring",
+              "metadata": {
+                "description": "SOCRadar Platform API Key"
+              }
+            },
+            "IncludeAPTBlockHash": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Include SOCRadar APT Recommended Block Hash feed (~500 indicators). Add more feeds via Custom Collection IDs."
+              }
+            },
+            "CustomCollectionIds": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Comma-separated custom feed collection UUIDs"
+              }
+            },
+            "CustomCollectionNames": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Comma-separated custom collection names (matching IDs order)"
+              }
+            },
+            "InitialLookbackDays": {
+              "type": "int",
+              "defaultValue": 30,
+              "minValue": 0,
+              "maxValue": 3650,
+              "metadata": {
+                "description": "On the first run of a collection, send only indicators last seen within this many days. 0 sends the whole feed."
+              }
+            },
+            "PollingIntervalMinutes": {
+              "type": "int",
+              "defaultValue": 60,
+              "minValue": 5,
+              "maxValue": 1440,
+              "metadata": {
+                "description": "How often to poll SOCRadar feeds (5-1440 minutes). Values of 60 or more are rounded down to whole hours."
+              }
+            },
+            "EnableFeedsTable": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable logging indicators to SOCRadar_Feeds_CL custom table (requires Infrastructure playbook)"
+              }
+            },
+            "EnableAuditLogging": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable audit logging to SOCRadar_Feeds_Audit_CL custom table (requires Infrastructure playbook)"
+              }
+            },
+            "FeedsDcrEndpoint": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "DCE endpoint URL for Feeds table (from Infrastructure playbook output)"
+              }
+            },
+            "FeedsDcrImmutableId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "DCR immutable ID for Feeds table (from Infrastructure playbook output)"
+              }
+            },
+            "AuditDcrEndpoint": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "DCE endpoint URL for Audit table (from Infrastructure playbook output)"
+              }
+            },
+            "AuditDcrImmutableId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "DCR immutable ID for Audit table (from Infrastructure playbook output)"
+              }
+            },
+            "PackageUri": {
+              "type": "string",
+              "defaultValue": "https://github.com/orcunsami/SOCRadar-Azure-Feeds/releases/download/v1.0.0/FunctionApp.zip",
+              "metadata": {
+                "description": "URL of the Function App package. Leave the default unless you host the package yourself."
+              }
+            },
+            "_packagePushTimestamp": {
+              "type": "string",
+              "defaultValue": "[[utcNow()]",
+              "metadata": {
+                "description": "Set automatically. Forces the package push to run again on a redeploy, which would otherwise reset WEBSITE_RUN_FROM_PACKAGE and leave the app empty."
+              }
+            }
+          },
+          "variables": {
+            "functionAppName": "[[concat('socradar-feeds-', uniqueString(resourceGroup().id))]",
+            "managedIdentityName": "SOCRadar-Feeds-MI",
+            "hostingPlanName": "SOCRadar-Feeds-Plan",
+            "storageAccountName": "[[take(concat('srfeeds', uniqueString(resourceGroup().id)), 24)]",
+            "tableName": "FeedState",
+            "SentinelContributorRoleId": "ab8e14d6-4a74-4a29-9ba8-549422addade",
+            "StorageTableDataContributorRoleId": "0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3",
+            "MonitoringMetricsPublisherRoleId": "3913510d-42f4-4e42-8a64-420c390055eb",
+            "WebsiteContributorRoleId": "de139f84-1756-47ae-9be6-808fbbe84772",
+            "FeedsDcrName": "SOCRadar-Feeds-DCR",
+            "AuditDcrName": "SOCRadar-Feeds-Audit-DCR",
+            "FeedsStreamName": "Custom-SOCRadar_Feeds_CL",
+            "AuditStreamName": "Custom-SOCRadar_Feeds_Audit_CL",
+            "appInsightsName": "[[concat('socradar-feeds-ai-', uniqueString(resourceGroup().id))]",
+            "workspaceResourceId": "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+            "pollingSchedule": "[[if(greaterOrEquals(parameters('PollingIntervalMinutes'), 60), concat('0 0 */', string(div(parameters('PollingIntervalMinutes'), 60)), ' * * *'), concat('0 */', string(parameters('PollingIntervalMinutes')), ' * * * *'))]",
+            "workspace-location-inline": "[concat('[resourceGroup().locatio', 'n]')]",
+            "playbookContentId1": "SOCRadar-Feeds-FunctionApp",
+            "playbookId1": "[[resourceId('Microsoft.Logic/workflows', variables('playbookContentId1'))]",
+            "workspace-name": "[parameters('workspace')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-05-01",
+              "name": "[[variables('storageAccountName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "kind": "StorageV2",
+              "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false
+              }
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/tableServices",
+              "apiVersion": "2023-05-01",
+              "name": "[[concat(variables('storageAccountName'), '/default')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
+              "apiVersion": "2023-05-01",
+              "name": "[[concat(variables('storageAccountName'), '/default/', variables('tableName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Storage/storageAccounts/tableServices', variables('storageAccountName'), 'default')]"
+              ]
+            },
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2023-01-31",
+              "name": "[[variables('managedIdentityName')]",
+              "location": "[[variables('workspace-location-inline')]"
+            },
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2023-12-01",
+              "name": "[[variables('hostingPlanName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "sku": {
+                "name": "Y1",
+                "tier": "Dynamic"
+              },
+              "kind": "functionapp",
+              "properties": {
+                "reserved": true
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[[variables('appInsightsName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[[variables('workspaceResourceId')]",
+                "RetentionInDays": 30
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2023-12-01",
+              "name": "[[variables('functionAppName')]",
+              "location": "[[variables('workspace-location-inline')]",
+              "kind": "functionapp,linux",
+              "identity": "[[createObject('type', 'UserAssigned', 'userAssignedIdentities', createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), createObject()))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+                "[[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                "[[resourceId('Microsoft.Storage/storageAccounts/tableServices/tables', variables('storageAccountName'), 'default', variables('tableName'))]",
+                "[[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+              ],
+              "properties": {
+                "serverFarmId": "[[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+                "httpsOnly": true,
+                "siteConfig": {
+                  "linuxFxVersion": "Python|3.11",
+                  "ftpsState": "Disabled",
+                  "minTlsVersion": "1.2",
+                  "appSettings": [
+                    {
+                      "name": "AzureWebJobsStorage",
+                      "value": "[[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-05-01').keys[0].value, ';EndpointSuffix=core.windows.net')]"
+                    },
+                    {
+                      "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                      "value": "[[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-05-01').keys[0].value, ';EndpointSuffix=core.windows.net')]"
+                    },
+                    {
+                      "name": "WEBSITE_CONTENTSHARE",
+                      "value": "[[variables('functionAppName')]"
+                    },
+                    {
+                      "name": "FUNCTIONS_EXTENSION_VERSION",
+                      "value": "~4"
+                    },
+                    {
+                      "name": "FUNCTIONS_WORKER_RUNTIME",
+                      "value": "python"
+                    },
+                    {
+                      "name": "AzureWebJobsFeatureFlags",
+                      "value": "EnableWorkerIndexing"
+                    },
+                    {
+                      "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                      "value": "[[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+                    },
+                    {
+                      "name": "WEBSITE_RUN_FROM_PACKAGE",
+                      "value": "1"
+                    },
+                    {
+                      "name": "AZURE_CLIENT_ID",
+                      "value": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2023-01-31').clientId]"
+                    },
+                    {
+                      "name": "POLLING_SCHEDULE",
+                      "value": "[[variables('pollingSchedule')]"
+                    },
+                    {
+                      "name": "INITIAL_LOOKBACK_DAYS",
+                      "value": "[[string(parameters('InitialLookbackDays'))]"
+                    },
+                    {
+                      "name": "SOCRADAR_API_KEY",
+                      "value": "[[parameters('SocradarApiKey')]"
+                    },
+                    {
+                      "name": "WORKSPACE_ID",
+                      "value": "[[reference(variables('workspaceResourceId'), '2023-09-01').customerId]"
+                    },
+                    {
+                      "name": "STORAGE_ACCOUNT_NAME",
+                      "value": "[[variables('storageAccountName')]"
+                    },
+                    {
+                      "name": "INCLUDE_0cb06558728b4dc296019c93b78360d1",
+                      "value": "[[string(parameters('IncludeAPTBlockHash'))]"
+                    },
+                    {
+                      "name": "CUSTOM_COLLECTION_IDS",
+                      "value": "[[parameters('CustomCollectionIds')]"
+                    },
+                    {
+                      "name": "CUSTOM_COLLECTION_NAMES",
+                      "value": "[[parameters('CustomCollectionNames')]"
+                    },
+                    {
+                      "name": "ENABLE_FEEDS_TABLE",
+                      "value": "[[string(parameters('EnableFeedsTable'))]"
+                    },
+                    {
+                      "name": "ENABLE_AUDIT_LOGGING",
+                      "value": "[[string(parameters('EnableAuditLogging'))]"
+                    },
+                    {
+                      "name": "FEEDS_DCR_ENDPOINT",
+                      "value": "[[parameters('FeedsDcrEndpoint')]"
+                    },
+                    {
+                      "name": "FEEDS_DCR_IMMUTABLE_ID",
+                      "value": "[[parameters('FeedsDcrImmutableId')]"
+                    },
+                    {
+                      "name": "FEEDS_STREAM_NAME",
+                      "value": "[[variables('FeedsStreamName')]"
+                    },
+                    {
+                      "name": "AUDIT_DCR_ENDPOINT",
+                      "value": "[[parameters('AuditDcrEndpoint')]"
+                    },
+                    {
+                      "name": "AUDIT_DCR_IMMUTABLE_ID",
+                      "value": "[[parameters('AuditDcrImmutableId')]"
+                    },
+                    {
+                      "name": "AUDIT_STREAM_NAME",
+                      "value": "[[variables('AuditStreamName')]"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(variables('workspaceResourceId'), variables('managedIdentityName'), variables('SentinelContributorRoleId'))]",
+              "scope": "[[variables('workspaceResourceId')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('SentinelContributorRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('managedIdentityName'), variables('StorageTableDataContributorRoleId'))]",
+              "scope": "[[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('StorageTableDataContributorRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "condition": "[[parameters('EnableFeedsTable')]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceId('Microsoft.Insights/dataCollectionRules', variables('FeedsDcrName')), variables('managedIdentityName'), variables('MonitoringMetricsPublisherRoleId'))]",
+              "scope": "[[resourceId('Microsoft.Insights/dataCollectionRules', variables('FeedsDcrName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('MonitoringMetricsPublisherRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "condition": "[[parameters('EnableAuditLogging')]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceId('Microsoft.Insights/dataCollectionRules', variables('AuditDcrName')), variables('managedIdentityName'), variables('MonitoringMetricsPublisherRoleId'))]",
+              "scope": "[[resourceId('Microsoft.Insights/dataCollectionRules', variables('AuditDcrName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('MonitoringMetricsPublisherRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceId('Microsoft.Web/sites', variables('functionAppName')), variables('managedIdentityName'), variables('WebsiteContributorRoleId'))]",
+              "scope": "[[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+                "[[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('WebsiteContributorRoleId'))]",
+                "principalId": "[[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2020-10-01",
+              "name": "triggerFirstRun",
+              "location": "[[variables('workspace-location-inline')]",
+              "kind": "AzureCLI",
+              "identity": "[[createObject('type', 'UserAssigned', 'userAssignedIdentities', createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName')), createObject()))]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+                "[[guid(resourceId('Microsoft.Web/sites', variables('functionAppName')), variables('managedIdentityName'), variables('WebsiteContributorRoleId'))]"
+              ],
+              "properties": {
+                "azCliVersion": "2.50.0",
+                "forceUpdateTag": "[[parameters('_packagePushTimestamp')]",
+                "retentionInterval": "PT26H",
+                "timeout": "PT30M",
+                "cleanupPreference": "OnSuccess",
+                "scriptContent": "set -e; code=$(curl -s -o /dev/null -w '%{http_code}' -L \"$PACKAGE_URL\"); [ \"$code\" = 200 ] || { echo \"package URL returned HTTP $code\"; exit 1; }; curl -sSL -o /tmp/package.zip \"$PACKAGE_URL\"; python3 -c \"import zipfile;zipfile.ZipFile('/tmp/package.zip').testzip()\" >/dev/null 2>&1 || { echo 'downloaded package is not a readable zip'; exit 1; }; echo \"package downloaded: $(stat -c%s /tmp/package.zip) bytes\"; echo 'reading the app storage connection while the role assignment propagates'; CONN=; for wait in $(seq 1 8); do CONN=$(az functionapp config appsettings list --name \"$FA_NAME\" --resource-group \"$RG_NAME\" --query \"[?name=='AzureWebJobsStorage'].value\" -o tsv 2>/dev/null || true); [ -n \"$CONN\" ] && break; echo \"attempt $wait: the app settings are not readable yet\"; sleep 15; done; [ -n \"$CONN\" ] || { echo 'the app settings stayed unreadable for two minutes: the Website Contributor assignment never became effective'; exit 1; }; SA=$(printf '%s' \"$CONN\" | sed -n 's/.*AccountName=\\([^;]*\\).*/\\1/p'); [ -n \"$SA\" ] || { echo 'the app storage connection carries no AccountName'; exit 1; }; echo \"staging the package in the app storage account $SA\"; pointer() { az functionapp config appsettings list --name \"$FA_NAME\" --resource-group \"$RG_NAME\" --query \"[?name=='WEBSITE_RUN_FROM_PACKAGE'].value\" -o tsv 2>/dev/null; }; shape() { case \"$(pointer)\" in *function-releases*) echo blob;; 1) echo one;; '') echo missing;; *) echo other;; esac; }; staged() { [ \"$(shape)\" = blob ]; }; count() { az rest --method get --url \"https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/$RG_NAME/providers/Microsoft.Web/sites/$FA_NAME/functions?api-version=2023-12-01\" --query 'length(value)' -o tsv 2>/dev/null || echo 0; }; indexed() { n=$(count); case \"$n\" in ''|*[!0-9]*) return 1;; esac; [ \"$n\" -ge 1 ]; }; BLOB=package-$(date -u +%Y%m%d%H%M%S).zip; for attempt in $(seq 1 6); do az storage container create --name function-releases --connection-string \"$CONN\" -o none >/dev/null 2>&1 || true; if az storage blob upload --container-name function-releases --name \"$BLOB\" --file /tmp/package.zip --overwrite --connection-string \"$CONN\" -o none >/dev/null 2>&1; then SAS=$(az storage blob generate-sas --container-name function-releases --name \"$BLOB\" --permissions r --expiry 2099-12-31T00:00:00Z --connection-string \"$CONN\" -o tsv 2>/dev/null); { [ -n \"$SAS\" ] && az functionapp config appsettings set --name \"$FA_NAME\" --resource-group \"$RG_NAME\" --settings \"WEBSITE_RUN_FROM_PACKAGE=https://$SA.blob.core.windows.net/function-releases/$BLOB?$SAS\" -o none >/dev/null 2>&1; } || echo \"attempt $attempt: no read token was issued for the staged package\"; else echo \"attempt $attempt: the package upload failed; the readings decide\"; fi; echo \"attempt $attempt: pointer=$(shape) functions=$(count)\"; staged && break; sleep 30; done; staged || { echo 'the package pointer never became a blob under function-releases: the app would have no code to reload'; exit 1; }; echo 'restarting the app so the host reloads the staged package'; az functionapp restart --name \"$FA_NAME\" --resource-group \"$RG_NAME\" -o none >/dev/null 2>&1 || echo 'the restart call did not go through; the readings decide'; for i in $(seq 1 40); do sleep 15; indexed && { echo \"$(count) function(s) indexed after $((i * 15))s; run_on_startup triggers the first import\"; exit 0; }; done; echo 'the package is staged but no function was indexed in 10 minutes'; exit 1",
+                "environmentVariables": [
+                  {
+                    "name": "FA_NAME",
+                    "value": "[[variables('functionAppName')]"
+                  },
+                  {
+                    "name": "RG_NAME",
+                    "value": "[[resourceGroup().name]"
+                  },
+                  {
+                    "name": "SUB_ID",
+                    "value": "[[subscription().subscriptionId]"
+                  },
+                  {
+                    "name": "PACKAGE_URL",
+                    "value": "[[parameters('PackageUri')]"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[[concat(variables('workspace-name'),'/Microsoft.SecurityInsights/',concat('AzureFunction-', last(split(variables('playbookId1'),'/'))))]",
+              "properties": {
+                "parentId": "[[variables('playbookId1')]",
+                "contentId": "[variables('_playbookContentId1')]",
+                "kind": "AzureFunction",
+                "version": "[variables('playbookVersion1')]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadar Threat Feeds",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ],
+          "metadata": {
+            "title": "SOCRadar Feeds Function App",
+            "description": "Deploys an Azure Function App that imports threat intelligence indicators from SOCRadar feed API into Microsoft Sentinel. Supports IP, domain, URL, hash, and email indicators with batch upload and checkpoint-based deduplication. Deploy the Infrastructure playbook first.",
+            "version": "1.0.0",
+            "lastUpdateTime": "2026-10-01T00:00:00Z",
+            "releaseNotes": {
+              "version": "1.0",
+              "title": "[variables('blanks')]",
+              "notes": [
+                "Initial version"
+              ]
+            }
+          }
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('_playbookContentId1')]",
+        "contentKind": "AzureFunction",
+        "displayName": "SOCRadar-Feeds-FunctionApp",
+        "contentProductId": "[variables('_playbookcontentProductId1')]",
+        "id": "[variables('_playbookcontentProductId1')]",
+        "version": "[variables('playbookVersion1')]"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentTemplates",
+      "apiVersion": "2023-04-01-preview",
+      "name": "[variables('playbookTemplateSpecName2')]",
+      "location": "[parameters('workspace-location')]",
+      "dependsOn": [
+        "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
+      ],
+      "properties": {
+        "description": "SOCRadar-Feeds-Infrastructure Playbook with template version 3.0.0",
+        "mainTemplate": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "[variables('playbookVersion2')]",
+          "parameters": {
+            "WorkspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Existing Microsoft Sentinel Log Analytics Workspace Name"
+              }
+            },
+            "WorkspaceLocation": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location/region of the Log Analytics workspace"
+              }
+            },
+            "EnableFeedsTable": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable SOCRadar_Feeds_CL custom table for indicator logging"
+              }
+            },
+            "EnableAuditLogging": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable SOCRadar_Feeds_Audit_CL custom table for audit logging"
+              }
+            },
+            "EnableWorkbook": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Deploy SOCRadar Threat Feeds Analytics Dashboard workbook"
+              }
+            }
+          },
+          "variables": {
+            "FeedsDceName": "SOCRadar-Feeds-DCE",
+            "FeedsTableName": "SOCRadar_Feeds_CL",
+            "FeedsDcrName": "SOCRadar-Feeds-DCR",
+            "FeedsStreamName": "Custom-SOCRadar_Feeds_CL",
+            "AuditTableName": "SOCRadar_Feeds_Audit_CL",
+            "AuditDcrName": "SOCRadar-Feeds-Audit-DCR",
+            "AuditStreamName": "Custom-SOCRadar_Feeds_Audit_CL",
+            "workspaceResourceId": "[[resourceId('Microsoft.OperationalInsights/workspaces', parameters('WorkspaceName'))]",
+            "enableDce": "[[or(parameters('EnableFeedsTable'), parameters('EnableAuditLogging'))]",
+            "workspace-location-inline": "[concat('[resourceGroup().locatio', 'n]')]",
+            "workspace-name": "[parameters('workspace')]"
+          },
+          "resources": [
+            {
+              "condition": "[[variables('enableDce')]",
+              "type": "Microsoft.Insights/dataCollectionEndpoints",
+              "apiVersion": "2023-03-11",
+              "name": "[[variables('FeedsDceName')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "properties": {
+                "description": "Data Collection Endpoint for SOCRadar Feeds logging",
+                "networkAcls": {
+                  "publicNetworkAccess": "Enabled"
+                }
+              }
+            },
+            {
+              "condition": "[[parameters('EnableFeedsTable')]",
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[[concat(parameters('WorkspaceName'), '/', variables('FeedsTableName'))]",
+              "properties": {
+                "schema": {
+                  "name": "[[variables('FeedsTableName')]",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime",
+                      "description": "Event timestamp"
+                    },
+                    {
+                      "name": "CollectionName",
+                      "type": "string",
+                      "description": "Feed collection name"
+                    },
+                    {
+                      "name": "CollectionUUID",
+                      "type": "string",
+                      "description": "Feed collection UUID"
+                    },
+                    {
+                      "name": "IndicatorValue",
+                      "type": "string",
+                      "description": "Indicator value (IP, domain, hash, etc.)"
+                    },
+                    {
+                      "name": "IndicatorType",
+                      "type": "string",
+                      "description": "Indicator type (ipv4-addr, domain-name, file, url, email-addr)"
+                    },
+                    {
+                      "name": "LatestSeenDate",
+                      "type": "string",
+                      "description": "Latest seen date from SOCRadar"
+                    },
+                    {
+                      "name": "Source",
+                      "type": "string",
+                      "description": "Source identifier"
+                    }
+                  ]
+                },
+                "retentionInDays": 30,
+                "plan": "Analytics"
+              }
+            },
+            {
+              "condition": "[[parameters('EnableFeedsTable')]",
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[[variables('FeedsDcrName')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('FeedsDceName'))]",
+                "[[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('WorkspaceName'), variables('FeedsTableName'))]"
+              ],
+              "kind": "Direct",
+              "properties": {
+                "description": "DCR for SOCRadar Feeds indicator logging",
+                "dataCollectionEndpointId": "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('FeedsDceName'))]",
+                "streamDeclarations": {
+                  "Custom-SOCRadar_Feeds_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "CollectionName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "CollectionUUID",
+                        "type": "string"
+                      },
+                      {
+                        "name": "IndicatorValue",
+                        "type": "string"
+                      },
+                      {
+                        "name": "IndicatorType",
+                        "type": "string"
+                      },
+                      {
+                        "name": "LatestSeenDate",
+                        "type": "string"
+                      },
+                      {
+                        "name": "Source",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "workspaceResourceId": "[[variables('workspaceResourceId')]",
+                      "name": "workspace"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "[[variables('FeedsStreamName')]"
+                    ],
+                    "destinations": [
+                      "workspace"
+                    ],
+                    "transformKql": "source",
+                    "outputStream": "[[variables('FeedsStreamName')]"
+                  }
+                ]
+              }
+            },
+            {
+              "condition": "[[parameters('EnableAuditLogging')]",
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[[concat(parameters('WorkspaceName'), '/', variables('AuditTableName'))]",
+              "properties": {
+                "schema": {
+                  "name": "[[variables('AuditTableName')]",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime",
+                      "description": "Event timestamp"
+                    },
+                    {
+                      "name": "CollectionsProcessed",
+                      "type": "int",
+                      "description": "Collections delivered completely"
+                    },
+                    {
+                      "name": "CollectionsFailed",
+                      "type": "int",
+                      "description": "Collections that failed or lost indicators"
+                    },
+                    {
+                      "name": "IndicatorsCreated",
+                      "type": "int",
+                      "description": "Indicators successfully uploaded"
+                    },
+                    {
+                      "name": "IndicatorsSkipped",
+                      "type": "int",
+                      "description": "Indicators Microsoft Sentinel received and rejected"
+                    },
+                    {
+                      "name": "IndicatorsFailed",
+                      "type": "int",
+                      "description": "Indicators that never reached Microsoft Sentinel and will be sent again"
+                    },
+                    {
+                      "name": "DurationMs",
+                      "type": "int",
+                      "description": "Run duration in milliseconds"
+                    },
+                    {
+                      "name": "Status",
+                      "type": "string",
+                      "description": "Run status (Success, PartialSuccess, Failed)"
+                    },
+                    {
+                      "name": "ErrorMessage",
+                      "type": "string",
+                      "description": "Error details if any"
+                    }
+                  ]
+                },
+                "retentionInDays": 30,
+                "plan": "Analytics"
+              }
+            },
+            {
+              "condition": "[[parameters('EnableAuditLogging')]",
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[[variables('AuditDcrName')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "dependsOn": [
+                "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('FeedsDceName'))]",
+                "[[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('WorkspaceName'), variables('AuditTableName'))]"
+              ],
+              "kind": "Direct",
+              "properties": {
+                "description": "DCR for SOCRadar Feeds audit log ingestion",
+                "dataCollectionEndpointId": "[[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('FeedsDceName'))]",
+                "streamDeclarations": {
+                  "Custom-SOCRadar_Feeds_Audit_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "CollectionsProcessed",
+                        "type": "int"
+                      },
+                      {
+                        "name": "CollectionsFailed",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsCreated",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsSkipped",
+                        "type": "int"
+                      },
+                      {
+                        "name": "IndicatorsFailed",
+                        "type": "int"
+                      },
+                      {
+                        "name": "DurationMs",
+                        "type": "int"
+                      },
+                      {
+                        "name": "Status",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ErrorMessage",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "workspaceResourceId": "[[variables('workspaceResourceId')]",
+                      "name": "workspace"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "[[variables('AuditStreamName')]"
+                    ],
+                    "destinations": [
+                      "workspace"
+                    ],
+                    "transformKql": "source",
+                    "outputStream": "[[variables('AuditStreamName')]"
+                  }
+                ]
+              }
+            },
+            {
+              "condition": "[[and(parameters('EnableWorkbook'), parameters('EnableFeedsTable'))]",
+              "type": "Microsoft.Insights/workbooks",
+              "apiVersion": "2022-04-01",
+              "name": "[[guid(resourceGroup().id, 'SOCRadar-Feeds-Workbook')]",
+              "location": "[[parameters('WorkspaceLocation')]",
+              "kind": "shared",
+              "dependsOn": "[variables('TemplateEmptyArray')]",
+              "properties": {
+                "displayName": "SOCRadar Threat Feeds Dashboard",
+                "serializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"## SOCRadar Threat Feeds Dashboard\\nThreat intelligence indicator analytics from SOCRadar feeds.\"},\"name\":\"header\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Overview\"},\"name\":\"overview-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorValue)\\n| project Count\",\"size\":4,\"title\":\"Total Indicators\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"total-indicators\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(CollectionName)\\n| project Count\",\"size\":4,\"title\":\"Active Collections\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"active-collections\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorType)\\n| project Count\",\"size\":4,\"title\":\"Indicator Types\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"indicator-types\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| where TimeGenerated > ago(24h)\\n| summarize Count=dcount(IndicatorValue)\\n| project Count\",\"size\":4,\"title\":\"Last 24 Hours\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Count\",\"formatter\":12,\"formatOptions\":{\"palette\":\"auto\"}},\"showBorder\":false}},\"customWidth\":\"25\",\"name\":\"last-24h\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Indicator Analysis\"},\"name\":\"analysis-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorValue) by IndicatorType\\n| order by Count desc\",\"size\":2,\"title\":\"Indicators by Type\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"customWidth\":\"50\",\"name\":\"indicators-by-type\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorValue) by CollectionName\\n| order by Count desc\",\"size\":2,\"title\":\"Indicators by Collection\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"customWidth\":\"50\",\"name\":\"indicators-by-collection\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=count() by bin(TimeGenerated, 1h)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Indicators Over Time\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"timechart\"},\"name\":\"indicators-timeline\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| summarize Count=dcount(IndicatorValue) by CollectionName\\n| top 10 by Count desc\",\"size\":2,\"title\":\"Top 10 Collections\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"name\":\"top-collections\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_CL\\n| project TimeGenerated, CollectionName, IndicatorType, IndicatorValue, Source\\n| order by TimeGenerated desc\\n| take 50\",\"size\":0,\"title\":\"Recent Indicators\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"recent-indicators\"},{\"type\":1,\"content\":{\"json\":\"---\\n### Audit Monitoring\"},\"name\":\"audit-header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_Audit_CL\\n| summarize Count=count() by Status\\n| order by Count desc\",\"size\":2,\"title\":\"Import Run Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"customWidth\":\"50\",\"name\":\"audit-status\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_Audit_CL\\n| summarize Created=sum(IndicatorsCreated), Skipped=sum(IndicatorsSkipped) by bin(TimeGenerated, 1h)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Indicators Created vs Skipped\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"timechart\"},\"customWidth\":\"50\",\"name\":\"created-vs-skipped\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"SOCRadar_Feeds_Audit_CL\\n| project TimeGenerated, Status, CollectionsProcessed, IndicatorsCreated, IndicatorsSkipped, CollectionsFailed, IndicatorsFailed, DurationMs, ErrorMessage\\n| order by TimeGenerated desc\\n| take 20\",\"size\":0,\"title\":\"Recent Import Runs\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"recent-runs\"}],\"isLocked\":false,\"fallbackResourceIds\":[\"/subscriptions/{Subscription}/resourceGroups/{ResourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{Workspace}\"]}",
+                "version": "1.0",
+                "sourceId": "[[variables('workspaceResourceId')]",
+                "category": "sentinel"
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/providers/metadata",
+              "apiVersion": "2022-01-01-preview",
+              "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat('Playbook-', last(split(variables('playbookId2'),'/'))))]",
+              "properties": {
+                "parentId": "[variables('playbookId2')]",
+                "contentId": "[variables('_playbookContentId2')]",
+                "kind": "Playbook",
+                "version": "[variables('playbookVersion2')]",
+                "source": {
+                  "kind": "Solution",
+                  "name": "SOCRadar Threat Feeds",
+                  "sourceId": "[variables('_solutionId')]"
+                },
+                "author": {
+                  "name": "SOCRadar",
+                  "email": "[variables('_email')]"
+                },
+                "support": {
+                  "name": "SOCRadar",
+                  "email": "integration@socradar.io",
+                  "tier": "Partner",
+                  "link": "https://socradar.io/support"
+                }
+              }
+            }
+          ],
+          "metadata": {
+            "title": "SOCRadar Feeds Infrastructure",
+            "description": "Deploys data collection infrastructure for SOCRadar Threat Feeds: Data Collection Endpoint, custom tables (SOCRadar_Feeds_CL, SOCRadar_Feeds_Audit_CL), Data Collection Rules, and optional analytics workbook. Deploy this BEFORE the Function App playbook.",
+            "version": "1.0.0",
+            "lastUpdateTime": "2026-10-01T00:00:00Z",
+            "releaseNotes": {
+              "version": "1.0",
+              "title": "[variables('blanks')]",
+              "notes": [
+                "Initial version"
+              ]
+            }
+          }
+        },
+        "packageKind": "Solution",
+        "packageVersion": "[variables('_solutionVersion')]",
+        "packageName": "[variables('_solutionName')]",
+        "packageId": "[variables('_solutionId')]",
+        "contentSchemaVersion": "3.0.0",
+        "contentId": "[variables('_playbookContentId2')]",
+        "contentKind": "Playbook",
+        "displayName": "SOCRadar-Feeds-Infrastructure",
+        "contentProductId": "[variables('_playbookcontentProductId2')]",
+        "id": "[variables('_playbookcontentProductId2')]",
+        "version": "[variables('playbookVersion2')]"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/contentPackages",
+      "apiVersion": "2023-04-01-preview",
+      "location": "[parameters('workspace-location')]",
+      "properties": {
+        "version": "3.0.0",
+        "kind": "Solution",
+        "contentSchemaVersion": "3.0.0",
+        "displayName": "SOCRadar Threat Feeds",
+        "publisherDisplayName": "SOCRadar",
+        "descriptionHtml": "<p><strong>Note:</strong> Please refer to the following before installing the solution:</p>\n<p>• Review the solution <a href=\"https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/SOCRadar%20Threat%20Feeds/ReleaseNotes.md\">Release Notes</a></p>\n<p>• There may be <a href=\"https://aka.ms/sentinelsolutionsknownissues\">known issues</a> pertaining to this Solution, please refer to them before installing.</p>\n<p>The <a href=\"https://socradar.io/\">SOCRadar</a> Threat Feeds solution for Microsoft Sentinel imports threat intelligence indicators from SOCRadar feed collections into Microsoft Sentinel using an Azure Function App. Supports recommended and custom feed collections with batch upload, checkpoint-based deduplication, and optional custom table logging.</p>\n<p><strong>Workbooks:</strong> 1, <strong>Hunting Queries:</strong> 4, <strong>Function Apps:</strong> 1, <strong>Playbooks:</strong> 1</p>\n<p><a href=\"https://aka.ms/azuresentinel\">Learn more about Microsoft Sentinel</a> | <a href=\"https://aka.ms/azuresentinelsolutionsdoc\">Learn more about Solutions</a></p>\n",
+        "contentKind": "Solution",
+        "contentProductId": "[variables('_solutioncontentProductId')]",
+        "id": "[variables('_solutioncontentProductId')]",
+        "icon": "<img src=\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/socradar.svg\" width=\"75px\" height=\"75px\">",
+        "contentId": "[variables('_solutionId')]",
+        "parentId": "[variables('_solutionId')]",
+        "source": {
+          "kind": "Solution",
+          "name": "SOCRadar Threat Feeds",
+          "sourceId": "[variables('_solutionId')]"
+        },
+        "author": {
+          "name": "SOCRadar",
+          "email": "[variables('_email')]"
+        },
+        "support": {
+          "name": "SOCRadar",
+          "email": "integration@socradar.io",
+          "tier": "Partner",
+          "link": "https://socradar.io/support"
+        },
+        "dependencies": {
+          "operator": "AND",
+          "criteria": [
+            {
+              "kind": "Workbook",
+              "contentId": "[variables('_workbookContentId1')]",
+              "version": "[variables('workbookVersion1')]"
+            },
+            {
+              "kind": "HuntingQuery",
+              "contentId": "[variables('huntingQueryObject1')._huntingQuerycontentId1]",
+              "version": "[variables('huntingQueryObject1').huntingQueryVersion1]"
+            },
+            {
+              "kind": "HuntingQuery",
+              "contentId": "[variables('huntingQueryObject2')._huntingQuerycontentId2]",
+              "version": "[variables('huntingQueryObject2').huntingQueryVersion2]"
+            },
+            {
+              "kind": "HuntingQuery",
+              "contentId": "[variables('huntingQueryObject3')._huntingQuerycontentId3]",
+              "version": "[variables('huntingQueryObject3').huntingQueryVersion3]"
+            },
+            {
+              "kind": "HuntingQuery",
+              "contentId": "[variables('huntingQueryObject4')._huntingQuerycontentId4]",
+              "version": "[variables('huntingQueryObject4').huntingQueryVersion4]"
+            },
+            {
+              "kind": "AzureFunction",
+              "contentId": "[variables('_SOCRadar-Feeds-FunctionApp')]",
+              "version": "[variables('playbookVersion1')]"
+            },
+            {
+              "kind": "Playbook",
+              "contentId": "[variables('_SOCRadar-Feeds-Infrastructure')]",
+              "version": "[variables('playbookVersion2')]"
+            }
+          ]
+        },
+        "firstPublishDate": "2026-02-27",
+        "lastPublishDate": "2026-03-09",
+        "providers": [
+          "SOCRadar"
+        ],
+        "categories": {
+          "domains": [
+            "Security - Threat Intelligence",
+            "Security - Threat Protection"
+          ]
+        }
+      },
+      "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/', variables('_solutionId'))]"
+    }
+  ],
+  "outputs": {}
+}
