@@ -11530,5 +11530,18 @@
     "templateRelativePath": "PRODAFTUstaIoCOverview.json",
     "subtitle": "",
     "provider": "PRODAFT"
+  },
+  {
+    "workbookKey": "SOCRadarAlarmsPushWorkbook",
+    "logoFileName": "socradar.svg",
+    "description": "Alarms SOCRadar sent to Microsoft Sentinel, by status, main type and severity, new alarms per day and the latest alarms.",
+    "dataTypesDependencies": ["SOCRadar_Alarms_CL"],
+    "dataConnectorsDependencies": ["SOCRadarAlarmsPush"],
+    "previewImagesFileNames": [""],
+    "version": "1.0.0",
+    "title": "SOCRadar Alarms",
+    "templateRelativePath": "SOCRadarAlarmsPush.json",
+    "subtitle": "",
+    "provider": "SOCRadar"
   }
 ]

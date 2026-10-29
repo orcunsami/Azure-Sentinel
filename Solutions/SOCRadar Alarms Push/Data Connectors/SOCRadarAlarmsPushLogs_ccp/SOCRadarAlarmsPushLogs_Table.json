@@ -1,0 +1,56 @@
+{
+  "name": "SOCRadar_Alarms_CL",
+  "type": "Microsoft.OperationalInsights/workspaces/tables",
+  "apiVersion": "2025-07-01",
+  "properties": {
+    "schema": {
+      "name": "SOCRadar_Alarms_CL",
+      "columns": [
+        {
+          "name": "TimeGenerated",
+          "type": "datetime"
+        },
+        {
+          "name": "AlarmId",
+          "type": "string"
+        },
+        {
+          "name": "CompanyId",
+          "type": "string"
+        },
+        {
+          "name": "AlarmMainType",
+          "type": "string"
+        },
+        {
+          "name": "AlarmSubType",
+          "type": "string"
+        },
+        {
+          "name": "Severity",
+          "type": "string"
+        },
+        {
+          "name": "Status",
+          "type": "string"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "AlarmText",
+          "type": "string"
+        },
+        {
+          "name": "AlarmDate",
+          "type": "string"
+        },
+        {
+          "name": "AlarmPayload",
+          "type": "dynamic"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "name": "SOCRadarAlarmsPush",
+  "apiVersion": "2022-09-01-preview",
+  "type": "Microsoft.SecurityInsights/dataConnectorDefinitions",
+  "kind": "Customizable",
+  "location": "{{workspaceLocation}}",
+  "properties": {
+    "connectorUiConfig": {
+      "id": "SOCRadarAlarmsPush",
+      "title": "SOCRadar Alarms (Push, preview)",
+      "publisher": "SOCRadar",
+      "descriptionMarkdown": "The [SOCRadar](https://socradar.io) alarms connector lets the SOCRadar platform send your alarms to Microsoft Sentinel as they are raised or change. Nothing runs in your Azure subscription besides the data collection rule. Microsoft's CCF push connector is a preview feature.",
+      "graphQueries": [
+        {
+          "metricName": "Alarms received",
+          "legend": "SOCRadar_Alarms_CL",
+          "baseQuery": "SOCRadar_Alarms_CL"
+        }
+      ],
+      "sampleQueries": [
+        {
+          "description": "SOCRadar - latest alarms",
+          "query": "SOCRadar_Alarms_CL\n | summarize arg_max(TimeGenerated, *) by AlarmId\n | sort by TimeGenerated desc\n | take 50"
+        },
+        {
+          "description": "SOCRadar - alarms by main type",
+          "query": "SOCRadar_Alarms_CL\n | summarize arg_max(TimeGenerated, *) by AlarmId\n | summarize Alarms = count() by AlarmMainType\n | order by Alarms desc"
+        }
+      ],
+      "dataTypes": [
+        {
+          "name": "SOCRadar_Alarms_CL",
+          "lastDataReceivedQuery": "SOCRadar_Alarms_CL\n | summarize Time = max(TimeGenerated)\n | where isnotempty(Time)"
+        }
+      ],
+      "connectivityCriteria": [
+        {
+          "type": "IsConnectedQuery",
+          "value": [
+            "SOCRadar_Alarms_CL\n | summarize LastLogReceived = max(TimeGenerated)\n | project IsConnected = LastLogReceived > ago(7d)"
+          ]
+        }
+      ],
+      "availability": {
+        "status": 1,
+        "isPreview": true
+      },
+      "permissions": {
+        "resourceProvider": [
+          {
+            "provider": "Microsoft.OperationalInsights/workspaces",
+            "permissionsDisplayText": "read and write permissions are required.",
+            "providerDisplayName": "Workspace",
+            "scope": "Workspace",
+            "requiredPermissions": {
+              "write": true,
+              "read": true,
+              "delete": true
+            }
+          }
+        ],
+        "customs": [
+          {
+            "name": "Microsoft Entra",
+            "description": "Permission to create an app registration in Microsoft Entra ID."
+          },
+          {
+            "name": "Microsoft Azure",
+            "description": "Permission to assign Monitoring Metrics Publisher role on data collection rule (DCR)."
+          },
+          {
+            "name": "SOCRadar",
+            "description": "Permission to configure the Microsoft Sentinel integration in the SOCRadar platform."
+          }
+        ]
+      },
+      "instructionSteps": [
+        {
+          "title": "1. Create ARM Resources and Provide the Required Permissions",
+          "description": "This connector lets SOCRadar send alarms to Microsoft Sentinel through the Azure Monitor Logs Ingestion API.",
+          "instructions": [
+            {
+              "type": "Markdown",
+              "parameters": {
+                "content": "#### Automated Configuration and Secure Data Ingestion with Entra Application \nClicking on \"Deploy\" will create the Log Analytics table and a Data Collection Rule (DCR). It will then create an Entra application, link the DCR to it, and set the entered secret in the application. This setup enables data to be sent securely to the DCR using an Entra token."
+              }
+            },
+            {
+              "type": "DeployPushConnectorButton",
+              "parameters": {
+                "label": "Deploy SOCRadar connector resources",
+                "applicationDisplayName": "SOCRadar Alarms Connector Application"
+              }
+            }
+          ]
+        },
+        {
+          "title": "2. Values for the SOCRadar platform",
+          "description": "Use these values to configure the Microsoft Sentinel channel in SOCRadar.",
+          "instructions": [
+            {
+              "type": "CopyableLabel",
+              "parameters": {
+                "label": "Entra Application (Client) ID",
+                "fillWith": [
+                  "ApplicationId"
+                ],
+                "placeholder": "Deploy push connector to get the App Registration Application ID"
+              }
+            },
+            {
+              "type": "CopyableLabel",
+              "parameters": {
+                "label": "Entra Directory (Tenant) ID",
+                "fillWith": [
+                  "TenantId"
+                ]
+              }
+            },
+            {
+              "type": "CopyableLabel",
+              "parameters": {
+                "label": "Entra App Registration Secret",
+                "fillWith": [
+                  "ApplicationSecret"
+                ],
+                "placeholder": "Deploy push connector to get the App Registration Secret"
+              }
+            },
+            {
+              "type": "CopyableLabel",
+              "parameters": {
+                "label": "Log Ingestion URL",
+                "fillWith": [
+                  "DataCollectionEndpoint",
+                  "DataCollectionRuleId"
+                ],
+                "placeholder": "Deploy push connector to get the Data Collection Endpoint URI",
+                "value": "{0}/dataCollectionRules/{1}/streams/Custom-SOCRadarAlarmsPushStream?api-version=2023-01-01"
+              }
+            }
+          ]
+        },
+        {
+          "title": "3. Configure SOCRadar to send alarms",
+          "description": "The SOCRadar platform needs a Microsoft Sentinel channel. That channel is in development; until it is released, alarms can be sent with the sender script in the SOCRadar-Azure-Incidents-CCF repository (push/tools/send_alarms.py).",
+          "instructions": [
+            {
+              "type": "Markdown",
+              "parameters": {
+                "content": "Send alarms as a JSON array to the Log Ingestion URL above, with an Entra token for the scope `https://monitor.azure.com/.default`. Add `company_id` to every alarm."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

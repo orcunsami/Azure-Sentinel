@@ -1,0 +1,27 @@
+{
+  "name": "SOCRadarAlarmsPushPolling",
+  "apiVersion": "2023-02-01-preview",
+  "type": "Microsoft.SecurityInsights/dataConnectors",
+  "kind": "Push",
+  "properties": {
+    "connectorDefinitionName": "SOCRadarAlarmsPush",
+    "dcrConfig": {
+      "streamName": "Custom-SOCRadarAlarmsPushStream",
+      "dataCollectionEndpoint": "{{dataCollectionEndpoint}}",
+      "dataCollectionRuleImmutableId": "{{dataCollectionRuleImmutableId}}"
+    },
+    "auth": {
+      "type": "Push",
+      "AppId": "{{appId}}",
+      "ServicePrincipalId": "{{servicePrincipalId}}"
+    },
+    "request": {
+      "RetryCount": 1
+    },
+    "response": {
+      "eventsJsonPaths": [
+        "$"
+      ]
+    }
+  }
+}

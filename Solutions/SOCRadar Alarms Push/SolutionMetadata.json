@@ -1,0 +1,21 @@
+{
+  "publisherId": "socradar",
+  "offerId": "azure-sentinel-solution-socradar-alarms-push",
+  "firstPublishDate": "2026-10-19",
+  "providers": [
+    "SOCRadar"
+  ],
+  "categories": {
+    "domains": [
+      "Security - Threat Intelligence",
+      "Security - Threat Protection"
+    ],
+    "verticals": []
+  },
+  "support": {
+    "name": "SOCRadar",
+    "email": "integration@socradar.io",
+    "tier": "Partner",
+    "link": "https://github.com/orcunsami/SOCRadar-Azure-Incidents-CCF"
+  }
+}

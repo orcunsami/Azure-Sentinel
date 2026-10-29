@@ -1,0 +1,5 @@
+# Release Notes
+
+| **Version** | **Date Modified (DD-MM-YYYY)** | **Change History** |
+| ----------- | ------------------------------ | ------------------ |
+| 3.0.0       | 19-10-2026                     | Initial release. CCF push connector (preview), 10 analytic rule templates, workbook. |

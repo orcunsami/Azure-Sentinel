@@ -1,0 +1,91 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## SOCRadar alarms\nAlarms the SOCRadar Alarms connector wrote to SOCRadar_Alarms_CL. Only the newest row per alarm counts."
+      },
+      "name": "title"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SOCRadar_Alarms_CL\n| summarize arg_max(TimeGenerated, *) by AlarmId\n| summarize Alarms = count() by Status",
+        "size": 1,
+        "title": "Alarms by status",
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart"
+      },
+      "name": "by-status"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SOCRadar_Alarms_CL\n| summarize arg_max(TimeGenerated, *) by AlarmId\n| summarize Alarms = count() by AlarmMainType\n| sort by Alarms desc",
+        "size": 1,
+        "title": "Alarms by main type",
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "barchart"
+      },
+      "name": "by-main-type"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SOCRadar_Alarms_CL\n| summarize arg_max(TimeGenerated, *) by AlarmId\n| summarize Alarms = count() by Severity",
+        "size": 1,
+        "title": "Alarms by SOCRadar severity",
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart"
+      },
+      "name": "by-severity"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SOCRadar_Alarms_CL\n| summarize arg_max(TimeGenerated, *) by AlarmId\n| summarize Alarms = count() by bin(TimeGenerated, 1d)\n| render timechart",
+        "size": 1,
+        "title": "New alarms per day",
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "per-day"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SOCRadar_Alarms_CL\n| summarize arg_max(TimeGenerated, *) by AlarmId\n| sort by TimeGenerated desc\n| take 50\n| project TimeGenerated, AlarmId, Title, AlarmMainType, Severity, Status",
+        "size": 0,
+        "title": "Latest 50 alarms",
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "latest"
+    }
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

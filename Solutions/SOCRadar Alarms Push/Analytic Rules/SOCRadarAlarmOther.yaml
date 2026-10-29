@@ -1,0 +1,63 @@
+id: a2aeaa6f-e484-53d1-8a62-c35d7019a6fe
+name: "SOCRadar alarm: Other"
+description: |
+  'Raises one alert, and one incident, for every OPEN SOCRadar alarm of main type Other. Switch the rule off to stop incidents for that type.'
+severity: Medium
+status: Available
+requiredDataConnectors:
+  - connectorId: SOCRadarAlarmsPush
+    dataTypes:
+      - SOCRadar_Alarms_CL
+queryFrequency: 10m
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics: []
+relevantTechniques: []
+query: |
+  let alerted = SecurityAlert
+  | where TimeGenerated > ago(1h)
+  | where AlertName startswith "[SOCRadar] #"
+  | extend AlertAlarmId = tostring(extract(@"#(\d+) ", 1, AlertName))
+  | distinct AlertAlarmId;
+  SOCRadar_Alarms_CL
+  | where ingestion_time() > ago(1h)
+  | where isnotempty(AlarmId)
+  | where AlarmId !in (alerted)
+  | where AlarmMainType !in ("Executive Protection","Fraud Protection","Vulnerability Monitoring","Deep&Dark Web Monitoring","Internet Asset Inventory Monitoring","Configuration Weakness","Supply Chain Intelligence","Brand Protection","VIP Protection")
+  | summarize arg_max(TimeGenerated, *) by AlarmId
+  | where toupper(Status) == "OPEN"
+  | extend AlarmUrl = strcat("https://platform.socradar.com/company/", CompanyId, "/alarm/", AlarmId)
+  | extend SentinelSeverity = case(toupper(Severity) in ("CRITICAL", "HIGH"), "High", toupper(Severity) == "MEDIUM", "Medium", "Low")
+  | extend AlarmDescription = strcat(substring(AlarmText, 0, 1500), "\n\nSOCRadar severity: ", toupper(Severity))
+  | project TimeGenerated, AlarmId, CompanyId, Title, AlarmDescription, AlarmMainType, AlarmSubType, Severity, Status, AlarmDate, AlarmUrl, SentinelSeverity
+  | order by TimeGenerated asc
+  | take 149
+eventGroupingSettings:
+  aggregationKind: AlertPerResult
+alertDetailsOverride:
+  alertDisplayNameFormat: "[SOCRadar] #{{AlarmId}} - {{Title}}"
+  alertDescriptionFormat: '{{AlarmDescription}}'
+  alertSeverityColumnName: SentinelSeverity
+customDetails:
+  AlarmId: AlarmId
+  AlarmMainType: AlarmMainType
+  AlarmSubType: AlarmSubType
+  SocradarSeverity: Severity
+  AlarmStatus: Status
+entityMappings:
+  - entityType: URL
+    fieldMappings:
+      - identifier: Url
+        columnName: AlarmUrl
+incidentConfiguration:
+  createIncident: true
+  groupingConfiguration:
+    enabled: true
+    reopenClosedIncident: false
+    lookbackDuration: P7D
+    matchingMethod: Selected
+    groupByEntities:
+      - URL
+version: 1.0.0
+kind: Scheduled

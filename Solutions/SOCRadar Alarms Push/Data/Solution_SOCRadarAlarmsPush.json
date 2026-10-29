@@ -1,0 +1,32 @@
+{
+  "Name": "SOCRadar Alarms Push",
+  "Author": "SOCRadar - integration@socradar.io",
+  "Logo": "<img src=\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/socradar.svg\" width=\"75px\" height=\"75px\">",
+  "Description": "The [SOCRadar](https://socradar.io/) alarms push solution for Microsoft Sentinel lets the SOCRadar platform send alarms to Microsoft Sentinel and raises one incident per OPEN alarm.\n\n**Underlying Microsoft Technologies used:**\n\nThis solution takes a dependency on the following technologies, and some of these dependencies either may be in [Preview](https://azure.microsoft.com/support/legal/preview-supplemental-terms/) state or might result in additional ingestion or operational costs.\n\n a. [Codeless Connector Framework push connectors](https://learn.microsoft.com/azure/sentinel/create-push-codeless-connector) (preview)\n\n b. [Azure Monitor Logs Ingestion API](https://learn.microsoft.com/azure/azure-monitor/logs/logs-ingestion-api-overview)",
+  "Data Connectors": [
+    "Data Connectors/SOCRadarAlarmsPushLogs_ccp/SOCRadarAlarmsPushLogs_connectorDefinition.json"
+  ],
+  "Workbooks": [
+    "Workbooks/SOCRadarAlarmsPush.json"
+  ],
+  "WorkbookDescription": [
+    "SOCRadar Alarms shows alarms by status, main type and severity, new alarms per day and the latest alarms."
+  ],
+  "Analytic Rules": [
+    "Analytic Rules/SOCRadarAlarmExecutiveProtection.yaml",
+    "Analytic Rules/SOCRadarAlarmFraudProtection.yaml",
+    "Analytic Rules/SOCRadarAlarmVulnerabilityMonitoring.yaml",
+    "Analytic Rules/SOCRadarAlarmDeepDarkWebMonitoring.yaml",
+    "Analytic Rules/SOCRadarAlarmInternetAssetInventoryMonitoring.yaml",
+    "Analytic Rules/SOCRadarAlarmConfigurationWeakness.yaml",
+    "Analytic Rules/SOCRadarAlarmSupplyChainIntelligence.yaml",
+    "Analytic Rules/SOCRadarAlarmBrandProtection.yaml",
+    "Analytic Rules/SOCRadarAlarmVIPProtection.yaml",
+    "Analytic Rules/SOCRadarAlarmOther.yaml"
+  ],
+  "BasePath": "C:\\GitHub\\Azure-Sentinel\\Solutions\\SOCRadar Alarms Push",
+  "Version": "3.0.0",
+  "Metadata": "SolutionMetadata.json",
+  "TemplateSpec": true,
+  "Is1PConnector": false
+}

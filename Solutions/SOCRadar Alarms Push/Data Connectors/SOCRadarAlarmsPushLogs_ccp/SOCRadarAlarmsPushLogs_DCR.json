@@ -1,0 +1,119 @@
+{
+  "name": "SOCRadarAlarmsPushDCR",
+  "apiVersion": "2022-06-01",
+  "type": "Microsoft.Insights/dataCollectionRules",
+  "location": "{{location}}",
+  "properties": {
+    "streamDeclarations": {
+      "Custom-SOCRadarAlarmsPushStream": {
+        "columns": [
+          {
+            "name": "alarm_id",
+            "type": "long"
+          },
+          {
+            "name": "alarm_asset",
+            "type": "string"
+          },
+          {
+            "name": "alarm_risk_level",
+            "type": "string"
+          },
+          {
+            "name": "alarm_text",
+            "type": "string"
+          },
+          {
+            "name": "alarm_response",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "type": "string"
+          },
+          {
+            "name": "date",
+            "type": "string"
+          },
+          {
+            "name": "last_notification_date",
+            "type": "string"
+          },
+          {
+            "name": "notification_id",
+            "type": "string"
+          },
+          {
+            "name": "approved_by",
+            "type": "string"
+          },
+          {
+            "name": "is_approved",
+            "type": "boolean"
+          },
+          {
+            "name": "alarm_type_details",
+            "type": "dynamic"
+          },
+          {
+            "name": "alarm_related_entities",
+            "type": "dynamic"
+          },
+          {
+            "name": "alarm_related_assets",
+            "type": "dynamic"
+          },
+          {
+            "name": "alarm_assignees",
+            "type": "dynamic"
+          },
+          {
+            "name": "content",
+            "type": "dynamic"
+          },
+          {
+            "name": "extra",
+            "type": "dynamic"
+          },
+          {
+            "name": "history",
+            "type": "dynamic"
+          },
+          {
+            "name": "notes",
+            "type": "dynamic"
+          },
+          {
+            "name": "tags",
+            "type": "dynamic"
+          },
+          {
+            "name": "company_id",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "destinations": {
+      "logAnalytics": [
+        {
+          "workspaceResourceId": "{{workspaceResourceId}}",
+          "name": "clv2ws1"
+        }
+      ]
+    },
+    "dataFlows": [
+      {
+        "streams": [
+          "Custom-SOCRadarAlarmsPushStream"
+        ],
+        "destinations": [
+          "clv2ws1"
+        ],
+        "transformKql": "source | extend AlarmText = substring(alarm_text, 0, 4000) | project-away alarm_text | extend TimeGenerated = now(), AlarmId = tostring(alarm_id), CompanyId = tostring(company_id), AlarmMainType = tostring(alarm_type_details.alarm_main_type), AlarmSubType = tostring(alarm_type_details.alarm_sub_type), Severity = alarm_risk_level, Status = status, Title = tostring(alarm_type_details.alarm_generic_title), AlarmDate = [\"date\"], AlarmPayload = pack_all() | project TimeGenerated, AlarmId, CompanyId, AlarmMainType, AlarmSubType, Severity, Status, Title, AlarmText, AlarmDate, AlarmPayload",
+        "outputStream": "Custom-SOCRadar_Alarms_CL"
+      }
+    ],
+    "dataCollectionEndpointId": "{{dataCollectionEndpointId}}"
+  }
+}
