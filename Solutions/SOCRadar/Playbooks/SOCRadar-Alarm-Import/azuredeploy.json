@@ -205,7 +205,8 @@
         "alertBackedSamplePhishingAutomationId": "[guid(variables('workspaceResourceId'), 'socradar-sample-automation-phishing')]",
         "alertBackedSampleDomainAutomationId": "[guid(variables('workspaceResourceId'), 'socradar-sample-automation-suspicious-domain')]",
         "_logAnalyticsBaseUrl": "[concat('https://api.loganalytics', '.io/')]",
-        "_logAnalyticsAudience": "[concat('https://api.loganalytics', '.io')]"
+        "_logAnalyticsAudience": "[concat('https://api.loganalytics', '.io')]",
+        "isExternalWorkspace": "[not(equals(parameters('WorkspaceResourceGroup'), resourceGroup().name))]"
     },
     "resources": [
         {
