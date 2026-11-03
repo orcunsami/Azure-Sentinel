@@ -11,6 +11,7 @@ Deploying this playbook also provisions the Data Collection Endpoint, the `SOCRa
 - Severity and status mapping
 - Optional closed alarm import with classification
 - Automatic tagging (SOCRadar, alarm type, sub type)
+- Daily rescan: the first run after 09:00 UTC reads 5 days back; an alarm that `Direct` imported earlier gets one second, rule-created incident in `AlertBacked`
 - Field truncation for large alarms
 - Optional audit logging
 - `EnableCredentialRule` and `DeploySampleAutomationRules` parameters (`AlertBacked` only)
