@@ -781,26 +781,26 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "columnName": "AlarmMainType",
-                        "identifier": "Name"
+                        "identifier": "Name",
+                        "columnName": "AlarmMainType"
                       },
                       {
-                        "columnName": "AlarmSubType",
-                        "identifier": "Category"
+                        "identifier": "Category",
+                        "columnName": "AlarmSubType"
                       }
-                    ]
+                    ],
+                    "entityType": "Malware"
                   },
                   {
-                    "entityType": "URL",
                     "fieldMappings": [
                       {
-                        "columnName": "AlarmUrl",
-                        "identifier": "Url"
+                        "identifier": "Url",
+                        "columnName": "AlarmUrl"
                       }
-                    ]
+                    ],
+                    "entityType": "URL"
                   }
                 ]
               }
@@ -893,13 +893,13 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Malware",
                     "fieldMappings": [
                       {
-                        "columnName": "AccountName",
-                        "identifier": "Name"
+                        "identifier": "Name",
+                        "columnName": "AccountName"
                       }
-                    ]
+                    ],
+                    "entityType": "Malware"
                   }
                 ]
               }
@@ -990,13 +990,13 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "Account",
                     "fieldMappings": [
                       {
-                        "columnName": "AccountName",
-                        "identifier": "Name"
+                        "identifier": "Name",
+                        "columnName": "AccountName"
                       }
-                    ]
+                    ],
+                    "entityType": "Account"
                   }
                 ]
               }
@@ -1249,6 +1249,7 @@
             "alertBackedSampleDomainAutomationId": "[[guid(variables('workspaceResourceId'), 'socradar-sample-automation-suspicious-domain')]",
             "_logAnalyticsBaseUrl": "[[concat('https://api.loganalytics', '.io/')]",
             "_logAnalyticsAudience": "[[concat('https://api.loganalytics', '.io')]",
+            "isExternalWorkspace": "[[not(equals(parameters('WorkspaceResourceGroup'), resourceGroup().name))]",
             "connection-1": "[[subscriptionResourceId('Microsoft.Web/locations/managedApis', variables('workspace-location-inline'), 'azuresentinel')]",
             "_connection-1": "[[variables('connection-1')]",
             "workspace-location-inline": "[concat('[resourceGroup().locatio', 'n]')]",
