@@ -1,18 +1,19 @@
 # SOCRadar Alarm Import
 
-Imports SOCRadar XTI platform alarms into Microsoft Sentinel as incidents.
+Imports SOCRadar XTI platform alarms into Microsoft Sentinel as incidents. By default (`IncidentMode` `AlertBacked`) it writes each alarm to `SOCRadar_Alarms_CL` and five scheduled analytics rules raise the incidents, so they also appear in the Microsoft Defender portal; `Direct` creates them through the Microsoft Sentinel API.
 
 Deploying this playbook also provisions the Data Collection Endpoint, the `SOCRadar_Alarms_CL` and `SOCRadarAuditLog_CL` custom log tables, the associated Data Collection Rules, and the role assignments required by the Logic App's managed identity. No separate infrastructure deployment is needed.
 
 ## Features
 
 - Paginated alarm fetching (100 per page)
-- Duplicate detection via Microsoft Sentinel API
+- Duplicate detection: a checkpoint table in `AlertBacked`, the Microsoft Sentinel API in `Direct`
 - Severity and status mapping
 - Optional closed alarm import with classification
 - Automatic tagging (SOCRadar, alarm type, sub type)
 - Field truncation for large alarms
 - Optional audit logging
+- `EnableCredentialRule` and `DeploySampleAutomationRules` parameters (`AlertBacked` only)
 
 ## Prerequisites
 

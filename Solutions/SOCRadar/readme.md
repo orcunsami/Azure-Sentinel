@@ -16,15 +16,15 @@ flowchart LR
 
     subgraph LA["Azure Logic Apps"]
         direction TB
-        Import["SOCRadar-Alarm-Import<br/>Recurrence: 5 min<br/>Pagination · Dedup<br/>OPEN-only filter<br/>3-tag labeling"]
+        Import["SOCRadar-Alarm-Import<br/>Recurrence: 5 min<br/>Pagination · Dedup<br/>OPEN-only filter<br/>IncidentMode"]
         Sync["SOCRadar-Alarm-Sync<br/>Recurrence: 5 min<br/>Classification mapping<br/>Synced-tag tracking"]
     end
 
     subgraph SEN["Microsoft Sentinel"]
         direction TB
-        Inc["Incidents<br/>Labels: SOCRadar + type +<br/>subtype + Synced"]
+        Inc["Incidents<br/>Labels: SOCRadar +<br/>type + Synced"]
         HQ["Hunting Queries (5)"]
-        AR["Analytic Rules (3)"]
+        AR["Analytic Rules (3 templates +<br/>5 alarm-type rules)"]
         WB["SOCRadar Dashboard<br/>Workbook"]
     end
 
@@ -71,14 +71,15 @@ flowchart LR
 - Severity and status mapping
 - Tags for categorization (SOCRadar, alarm type, sub type)
 - Optional closed alarm import with classification
-- Incident mode: `Direct` creates incidents through the Microsoft Sentinel API; `AlertBacked` writes each alarm to `SOCRadar_Alarms_CL` and deploys a scheduled analytics rule that raises the incident, so it also appears in the Microsoft Defender portal's incident queue. In that mode the **SOCRadar High or Critical Severity Alarm** analytics rule template is redundant (every open alarm already raises an incident); leave it disabled. Verified against a workspace that is not connected to Microsoft Defender XDR; on a connected workspace Sync still resolves the alarm from the incident's URL entity, but the severity line in the description may be absent. Each alarm is written once and the incident is Microsoft Sentinel's to create; if the platform skips a rule run, those alarms are not re-alerted (`Direct` has no such dependency)
+- Incident mode (`IncidentMode`, default `AlertBacked`): the import writes each alarm to `SOCRadar_Alarms_CL` and five scheduled analytics rules (lookalike and phishing domain, credential exposure, data leak and PII, vulnerability and CVE, other alarms) raise one alert and one incident per alarm, with the entities and custom details of that alarm type. The incidents are listed in the Microsoft Defender portal, and arrive about 20 to 26 minutes after the alarm is imported. `Direct` creates the incidents through the Microsoft Sentinel API instead; they do not appear in the Defender queue. In `AlertBacked` the **SOCRadar High or Critical Severity Alarm** analytics rule template is redundant (every open alarm already raises an incident); leave it disabled. `EnableCredentialRule=false` switches off the credential rule (those alarms then get no incident). Each alarm is written once and the incident is Microsoft Sentinel's to create; if the platform skips a rule run, those alarms are not re-alerted (`Direct` has no such dependency)
+- Redeploying an existing `Direct` install without setting `IncidentMode` switches it to `AlertBacked`: alarms inside the first import window get a second, rule-created incident. Close the old ones, or pass `IncidentMode=Direct` to keep the previous behaviour
 
 **Bidirectional Sync**
-- Closed incidents in Microsoft Sentinel update alarm status in SOCRadar; closed incidents without the Synced tag are retried for 24 hours
+- Closed incidents in Microsoft Sentinel update alarm status in SOCRadar; closed incidents without the Synced tag are retried for 24 hours. Sync reads the alarm id from the incident title, or from its URL entity when Microsoft Defender renamed the incident
 - Classification mapping: TruePositive to Resolved, FalsePositive to False Positive, BenignPositive to Mitigated
 
 **Analytics**
-- SOCRadar Dashboard workbook with severity, status, and timeline charts
+- SOCRadar Dashboard workbook with severity, status, alarm type, alarm-to-incident, sync status and timeline panels
 - 5 hunting queries for alarm analysis and correlation
 - Optional audit logging for operational monitoring
 
@@ -105,7 +106,7 @@ Logic Apps start 3 minutes after deployment to allow Azure role propagation.
 
 | Playbook | Description |
 |----------|-------------|
-| [SOCRadar-Alarm-Import](Playbooks/SOCRadar-Alarm-Import) | Imports SOCRadar alarms as Microsoft Sentinel incidents, directly or through a scheduled analytics rule (`IncidentMode`). Provisions the DCE, custom log tables, and DCRs required by this solution. |
+| [SOCRadar-Alarm-Import](Playbooks/SOCRadar-Alarm-Import) | Imports SOCRadar alarms as Microsoft Sentinel incidents, through five scheduled analytics rules by alarm type (`IncidentMode` `AlertBacked`, the default) or directly (`Direct`). Provisions the DCE, custom log tables, and DCRs required by this solution. |
 | [SOCRadar-Alarm-Sync](Playbooks/SOCRadar-Alarm-Sync) | Syncs closed Microsoft Sentinel incidents back to SOCRadar with classification mapping. |
 | [SOCRadar-IOC-Enrichment](Playbooks/SOCRadar-IOC-Enrichment) | Enriches the entities of new incidents (IP, domain, URL, file hash) with SOCRadar IOC Enrichment and posts the result as an incident comment. Runs from an automation rule. |
 
@@ -119,5 +120,5 @@ Learn more at [socradar.io](https://socradar.io)
 
 ## Support
 
-- **Detailed Documentation (SOCRadar customers):** [Microsoft Azure Sentinel Integration (Bi-Directional)](https://help.socradar.io/hc/en-us/articles/41316851769745-Microsoft-Azure-Sentinel-Integration-Bi-Directional)
+- **Detailed Documentation (SOCRadar customers):** [Microsoft Sentinel Integration (Bi-Directional)](https://help.socradar.io/hc/en-us/articles/41316851769745-Microsoft-Azure-Sentinel-Integration-Bi-Directional)
 - **Support:** integration@socradar.io
